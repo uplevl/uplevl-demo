@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import z from "zod";
 
@@ -12,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import Input from "@/components/input";
 import Logo from "@/components/logo";
 import View from "@/components/view";
-import { inngest } from "@/inngest/client";
+import { inngest } from "@/server/inngest/client";
 
 const formSchema = z.object({
   url: z.string().min(1, { message: "Please enter a URL" }).url({ message: "Please enter a valid URL" }),
@@ -22,7 +21,6 @@ type FormSchema = z.infer<typeof formSchema>;
 
 export default function Home() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -45,7 +43,6 @@ export default function Home() {
   return (
     <View className="items-center gap-12">
       <Logo />
-      {error && <p className="text-error-400 text-sm">{error}</p>}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 w-full">
           <FormField
