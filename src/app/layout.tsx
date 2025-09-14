@@ -161,9 +161,7 @@ export default function RootLayout({
     <Providers>
       <html lang="en" className={`${plusJakartaSans.variable} antialiased font-sans`} suppressHydrationWarning>
         <body className="min-h-screen min-w-screen flex flex-col bg-gray-500">
-          <main className="max-w-md w-full mx-auto bg-white shadow-exploration2 rounded-2xl overflow-hidden">
-            {children}
-          </main>
+          <main className="max-w-md w-full mx-auto bg-white overflow-hidden min-h-dvh">{children}</main>
         </body>
       </html>
     </Providers>
