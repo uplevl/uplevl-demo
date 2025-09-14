@@ -1,5 +1,5 @@
+import type { InsertPostMediaGroup } from "@/server/database/schema";
 import * as PostMediaGroupRepository from "@/server/repositories/post-media-group.repository";
-import { InsertPostMediaGroup } from "../database/schema";
 
 export async function create(data: InsertPostMediaGroup) {
   const [postMediaGroup] = await PostMediaGroupRepository.create(data);

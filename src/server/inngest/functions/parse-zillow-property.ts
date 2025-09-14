@@ -1,13 +1,13 @@
 import z from "zod";
 
-import { inngest } from "@/inngest/client";
+import { inngest } from "@/server/inngest/client";
 import * as ImageService from "@/server/services/image.service";
 import * as JobService from "@/server/services/job.service";
 import * as PostService from "@/server/services/post.service";
 import * as PostMediaService from "@/server/services/post-media.service";
 import * as PostMediaGroupService from "@/server/services/post-media-group.service";
 import * as PropertyService from "@/server/services/property.service";
-import { AnalyzedImage } from "@/types/image";
+import type { AnalyzedImage } from "@/types/image";
 
 const parseZillowInputSchema = z.object({
   url: z.string().url(),
@@ -20,23 +20,28 @@ export default inngest.createFunction(
     // Tracks the status of the external parser service.
     let parserStatus: "running" | "ready" | "failed" = "running";
 
-    const { jobId, url } = await step.run("setup", async () => {
+    // Setup the job and post
+    const { jobId, url, postId } = await step.run("setup", async () => {
       const { url } = parseZillowInputSchema.parse(event.data);
-      const { id: jobId } = await JobService.create({ id: event.id!, eventName: event.name, stepName: "setup" });
 
-      return { jobId, url };
+      const post = await PostService.create();
+      const { id: jobId } = await JobService.create({
+        id: event.id ?? "",
+        eventName: event.name,
+        stepName: "setup",
+        postId: post.id,
+      });
+
+      return { jobId, url, postId: post.id };
     });
 
     // Start scraping the property details
-    const { postId, snapshotId } = await step.run("start-scraping", async () => {
+    const { snapshotId } = await step.run("start-scraping", async () => {
       await JobService.update(jobId, { stepName: "start-scraping" });
 
-      const post = await PostService.create();
       const { snapshot_id } = await PropertyService.scrapeZillowPropertyDetails(url);
 
-      await JobService.update(jobId, { postId: post.id });
-
-      return { postId: post.id, snapshotId: snapshot_id };
+      return { snapshotId: snapshot_id };
     });
 
     // Wait for the snapshot to be ready

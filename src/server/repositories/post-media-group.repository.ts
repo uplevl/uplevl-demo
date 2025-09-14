@@ -1,5 +1,5 @@
-import { db } from "../database";
-import { InsertPostMediaGroup, PostMediaGroupTable } from "../database/schema";
+import { db } from "@/server/database";
+import { type InsertPostMediaGroup, PostMediaGroupTable } from "@/server/database/schema";
 
 export async function create(data: InsertPostMediaGroup) {
   return await db.insert(PostMediaGroupTable).values(data).returning({ id: PostMediaGroupTable.id });

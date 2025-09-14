@@ -3,8 +3,8 @@ import sharp from "sharp";
 
 import { openai } from "@/server/lib/openai";
 import { bucket } from "@/server/lib/supabase";
+import { fetchImage } from "@/server/lib/utils";
 import type { AnalyzedImage, ImageGroupWithDescribedImages, ImageGroupWithImages } from "@/types/image";
-import { fetchImage } from "../lib/utils";
 
 function getStoragePath(userId: string, postId: string) {
   return `${userId}/post_${postId}/uploads/images`;

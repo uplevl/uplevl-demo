@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import { db } from "../database";
-import { InsertJob, JobTable, UpdateJob } from "../database/schema";
+
+import { db } from "@/server/database";
+import { type InsertJob, JobTable, type UpdateJob } from "@/server/database/schema";
 
 export async function create(data: InsertJob) {
   return await db.insert(JobTable).values(data).returning({ id: JobTable.id });

@@ -1,9 +1,9 @@
 import { brightDataClient } from "@/server/lib/bright-data";
 import { addEntry, createCacheKey, getEntry } from "@/server/lib/cache";
 import { fetchImage } from "@/server/lib/utils";
-import { BrightDataSnapshotStatus, BrightDataTriggerResponse } from "@/types/bright-data";
-import { PropertyStats } from "@/types/post";
-import { ZillowPropertyDetails } from "@/types/zillow";
+import type { BrightDataSnapshotStatus, BrightDataTriggerResponse } from "@/types/bright-data";
+import type { PropertyStats } from "@/types/post";
+import type { ZillowPropertyDetails } from "@/types/zillow";
 
 export async function scrapeZillowPropertyDetails(url: string) {
   const response = await brightDataClient.post<BrightDataTriggerResponse>(

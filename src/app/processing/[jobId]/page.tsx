@@ -3,16 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
+
 import Button from "@/components/button";
 import Logo from "@/components/logo";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import useApi from "@/hooks/use-api";
-
-interface ProcessingPageProps {
-  params: Promise<{ jobId: string }>;
-}
 
 export default function ProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);

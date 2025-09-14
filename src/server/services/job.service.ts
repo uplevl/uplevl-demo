@@ -1,5 +1,5 @@
+import type { InsertJob, UpdateJob } from "@/server/database/schema";
 import * as JobRepository from "@/server/repositories/job.repository";
-import { InsertJob, UpdateJob } from "../database/schema";
 
 export async function create(data: InsertJob) {
   const [job] = await JobRepository.create(data);

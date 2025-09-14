@@ -10,8 +10,8 @@ import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import useApi from "@/hooks/use-api";
-import { getById } from "@/server/repositories/post.repository";
-import { getByPostId } from "@/server/repositories/post-media-group.repository";
+import type { getById } from "@/server/repositories/post.repository";
+import type { getByPostId } from "@/server/repositories/post-media-group.repository";
 
 export default function PostResultsPage({ params }: { params: Promise<{ postId: string }> }) {
   const api = useApi();
