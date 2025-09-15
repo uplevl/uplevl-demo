@@ -21,11 +21,13 @@ export const env = createEnv({
   },
 
   client: {
+    NEXT_PUBLIC_URL: z.string().min(1),
     NEXT_PUBLIC_INNGEST_SIGNING_KEY: z.string().min(1),
   },
 
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
     DATABASE_URL: process.env.DATABASE_URL,
     DB_MIGRATING: process.env.DB_MIGRATING,
     DB_SEEDING: process.env.DB_SEEDING,
