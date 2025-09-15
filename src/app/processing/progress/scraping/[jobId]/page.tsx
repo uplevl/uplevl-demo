@@ -140,7 +140,7 @@ export default function ProcessingPage({ params }: { params: Promise<{ jobId: st
             variant="primary"
             size="xl"
             className="w-full z-10"
-            onClick={() => router.push(`/processing/results/${data.postId}`)}
+            onClick={() => router.push(`/processing/prep-results/${data.postId}`)}
           >
             View Your Content
           </Button>

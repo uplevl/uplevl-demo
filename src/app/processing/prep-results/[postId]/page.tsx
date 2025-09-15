@@ -20,7 +20,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
 
   const { data, isLoading } = useQuery({
     queryKey: ["post-results", postId],
-    queryFn: () => getPostGroupsByPostId(postId),
+    queryFn: async () => getPostGroupsByPostId(postId),
   });
 
   if (isLoading) {

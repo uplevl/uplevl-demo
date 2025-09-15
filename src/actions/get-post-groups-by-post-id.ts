@@ -5,5 +5,6 @@ export default async function getPostGroupsByPostId(postId: string) {
   const response = await api.posts[`:postId`].groups.$get({
     param: { postId },
   });
+
   return response.json();
 }

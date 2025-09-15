@@ -37,7 +37,7 @@ export default function Home() {
       data: { url },
     });
     console.log(eventResult);
-    router.push(`/processing/${eventResult.ids[0]}`);
+    router.push(`/processing/progress/scraping/${eventResult.ids[0]}`);
   }
 
   return (
