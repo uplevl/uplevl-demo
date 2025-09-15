@@ -1,10 +1,11 @@
 import z from "zod";
 
-import { inngest } from "@/server/inngest/client";
-import * as JobService from "@/server/services/job.service";
-import * as PostService from "@/server/services/post.service";
-import * as PostMediaGroupService from "@/server/services/post-media-group.service";
-import * as ScriptService from "@/server/services/script.service";
+import { inngest } from "@/inngest/client";
+
+import * as JobService from "@/services/job.service";
+import * as PostService from "@/services/post.service";
+import * as PostMediaGroupService from "@/services/post-media-group.service";
+import * as ScriptService from "@/services/script.service";
 
 const generateScriptsInputSchema = z.object({
   postId: z.string(),

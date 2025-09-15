@@ -1,7 +1,8 @@
 import { generateText } from "ai";
-import { openRouter } from "@/server/lib/open-router";
-import type { Post } from "@/server/repositories/post.repository";
-import type { PostMediaGroup } from "@/server/repositories/post-media-group.repository";
+
+import { openRouter } from "@/lib/open-router";
+import type { Post } from "@/repositories/post.repository";
+import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 import type { VoiceSchema } from "@/types/voice";
 
 export const DEFAULT_VOICE_SCHEMA: VoiceSchema = {

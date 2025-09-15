@@ -1,5 +1,5 @@
-import type { InsertPostMedia, UpdatePostMedia } from "@/server/database/schema";
-import * as PostMediaRepository from "@/server/repositories/post-media.repository";
+import type { InsertPostMedia, UpdatePostMedia } from "@/database/schema";
+import * as PostMediaRepository from "@/repositories/post-media.repository";
 
 export async function create(data: InsertPostMedia) {
   const [postMedia] = await PostMediaRepository.create(data);

@@ -2,10 +2,12 @@ import { generateObject, generateText } from "ai";
 import pMap from "p-map";
 import sharp from "sharp";
 import z from "zod";
-import { addEntry, getEntry } from "@/server/lib/cache";
-import { openRouter } from "@/server/lib/open-router";
-import { bucket } from "@/server/lib/supabase";
-import { fetchImage } from "@/server/lib/utils";
+
+import { addEntry, getEntry } from "@/lib/cache";
+import { fetchImage } from "@/lib/helpers";
+import { openRouter } from "@/lib/open-router";
+import { bucket } from "@/lib/supabase";
+
 import type { AnalyzedImage, ImageGroupWithDescribedImages, ImageGroupWithImages } from "@/types/image";
 
 function getStoragePath(userId: string, postId: string) {

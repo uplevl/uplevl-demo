@@ -1,12 +1,14 @@
 import z from "zod";
 
-import { inngest } from "@/server/inngest/client";
-import * as ImageService from "@/server/services/image.service";
-import * as JobService from "@/server/services/job.service";
-import * as PostService from "@/server/services/post.service";
-import * as PostMediaService from "@/server/services/post-media.service";
-import * as PostMediaGroupService from "@/server/services/post-media-group.service";
-import * as PropertyService from "@/server/services/property.service";
+import { inngest } from "@/inngest/client";
+
+import * as ImageService from "@/services/image.service";
+import * as JobService from "@/services/job.service";
+import * as PostService from "@/services/post.service";
+import * as PostMediaService from "@/services/post-media.service";
+import * as PostMediaGroupService from "@/services/post-media-group.service";
+import * as PropertyService from "@/services/property.service";
+
 import type { AnalyzedImage } from "@/types/image";
 
 const parseZillowInputSchema = z.object({

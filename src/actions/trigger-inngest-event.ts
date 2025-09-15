@@ -1,6 +1,6 @@
 "use server";
 
-import { inngest } from "@/server/inngest/client";
+import { inngest } from "@/inngest/client";
 
 export default async function triggerInngestEvent<T>(eventName: string, data: T) {
   const eventResult = await inngest.send({

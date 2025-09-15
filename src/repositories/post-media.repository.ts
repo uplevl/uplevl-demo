@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
-import { db } from "@/server/database";
-import { type InsertPostMedia, PostMediaTable, type UpdatePostMedia } from "@/server/database/schema";
+import { db } from "@/database";
+import { type InsertPostMedia, PostMediaTable, type UpdatePostMedia } from "@/database/schema";
 
 export async function create(data: InsertPostMedia) {
   return await db.insert(PostMediaTable).values(data).returning({ id: PostMediaTable.id });

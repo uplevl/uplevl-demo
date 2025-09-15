@@ -1,8 +1,11 @@
 import { handle } from "hono/vercel";
+import { env } from "@/env";
 
 import app from "@/server/app";
 
-export const runtime = "nodejs";
+const IS_DEV = env.NODE_ENV === "development";
+
+export const runtime = IS_DEV ? "nodejs" : "edge";
 
 export const GET = handle(app);
 export const POST = handle(app);

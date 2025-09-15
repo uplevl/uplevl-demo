@@ -1,5 +1,5 @@
-import type { InsertPost, UpdatePost } from "@/server/database/schema";
-import * as PostRepository from "@/server/repositories/post.repository";
+import type { InsertPost, UpdatePost } from "@/database/schema";
+import * as PostRepository from "@/repositories/post.repository";
 
 export async function getById(postId: string) {
   const post = await PostRepository.getById(postId);

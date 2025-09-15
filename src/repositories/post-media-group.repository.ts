@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
-import { db } from "@/server/database";
-import { type InsertPostMediaGroup, PostMediaGroupTable, type UpdatePostMediaGroup } from "@/server/database/schema";
+
+import { db } from "@/database";
+import { type InsertPostMediaGroup, PostMediaGroupTable, type UpdatePostMediaGroup } from "@/database/schema";
 
 export async function getByPostId(postId: string) {
   return await db.query.PostMediaGroupTable.findMany({

@@ -1,3 +1,4 @@
+import "server-only";
 import Crypto from "node:crypto";
 
 export async function fetchImage(url: string) {

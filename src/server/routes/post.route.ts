@@ -2,10 +2,10 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import z from "zod";
 
-import * as ImageService from "@/server/services/image.service";
-import * as PostService from "@/server/services/post.service";
-import * as PostMediaGroupService from "@/server/services/post-media-group.service";
-import * as PropertyService from "@/server/services/property.service";
+import * as ImageService from "@/services/image.service";
+import * as PostService from "@/services/post.service";
+import * as PostMediaGroupService from "@/services/post-media-group.service";
+import * as PropertyService from "@/services/property.service";
 
 export const postRoute = new Hono()
 

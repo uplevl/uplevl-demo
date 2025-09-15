@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
-import { db } from "@/server/database";
-import { type InsertPost, PostTable, type UpdatePost } from "@/server/database/schema";
+import { db } from "@/database";
+import { type InsertPost, PostTable, type UpdatePost } from "@/database/schema";
 
 export async function getById(postId: string) {
   return await db.query.PostTable.findFirst({

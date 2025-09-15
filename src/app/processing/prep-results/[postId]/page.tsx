@@ -10,8 +10,8 @@ import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import usePostGroups from "@/hooks/use-post-groups";
-import type { getById } from "@/server/repositories/post.repository";
-import type { getByPostId } from "@/server/repositories/post-media-group.repository";
+import type { Post } from "@/repositories/post.repository";
+import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 
 export default function PostResultsPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = use(params);
@@ -73,7 +73,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
 }
 
 interface PropertyGroupsProps {
-  groups: NonNullable<Awaited<ReturnType<typeof getByPostId>>>;
+  groups: PostMediaGroup[];
 }
 
 function PropertyGroups({ groups }: PropertyGroupsProps) {
@@ -103,7 +103,7 @@ function PropertyGroups({ groups }: PropertyGroupsProps) {
 }
 
 interface PropertyDetailsProps {
-  post: NonNullable<Awaited<ReturnType<typeof getById>>>;
+  post: Post;
 }
 
 function PropertyDetails({ post }: PropertyDetailsProps) {

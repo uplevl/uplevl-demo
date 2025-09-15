@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
+import { env } from "@/env";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -9,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://uplevl.ai"),
+  metadataBase: new URL(env.NEXT_PUBLIC_URL),
   title: {
     default: "Uplevl | Automated Marketing for Real Estate Agents",
     template: "%s - Uplevl | Automated Marketing for Real Estate Agents",
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     "real estate marketing system",
     "Uplevl real estate",
   ],
-  authors: [{ name: "Uplevl", url: "https://uplevl.ai" }],
+  authors: [{ name: "Uplevl", url: env.NEXT_PUBLIC_URL }],
   creator: "Uplevl",
   publisher: "Uplevl",
   formatDetection: {
@@ -71,13 +72,13 @@ export const metadata: Metadata = {
   //   },
   // },
   alternates: {
-    canonical: "https://uplevl.ai",
+    canonical: env.NEXT_PUBLIC_URL,
     languages: {
-      "en-US": "https://uplevl.ai",
+      "en-US": env.NEXT_PUBLIC_URL,
     },
   },
   openGraph: {
-    url: "https://uplevl.ai",
+    url: env.NEXT_PUBLIC_URL,
     siteName: "Uplevl",
     locale: "en_US",
     type: "website",
@@ -86,7 +87,7 @@ export const metadata: Metadata = {
       "Generate more real estate leads and close more deals with marketing automation designed specifically for realtors.",
     images: [
       {
-        url: "https://uplevl.ai/og-image.jpg",
+        url: `${env.NEXT_PUBLIC_URL}/og-image.jpg`,
         width: 1200,
         height: 630,
         alt: "Uplevl | Automated Marketing for Real Estate Agents",
@@ -96,14 +97,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@uplevl",
-    creator: "@uplevl",
+    site: "@uplevlai",
+    creator: "@uplevlai",
     title: "Uplevl | Automated Marketing for Real Estate Agents",
     description:
       "Generate more real estate leads and close more deals with marketing automation designed specifically for realtors.",
     images: [
       {
-        url: "https://uplevl.ai/og-image.jpg",
+        url: `${env.NEXT_PUBLIC_URL}/og-image.jpg`,
         width: 1200,
         height: 630,
         alt: "Uplevl | Automated Marketing for Real Estate Agents",
@@ -112,7 +113,7 @@ export const metadata: Metadata = {
   },
   appLinks: {
     web: {
-      url: "https://uplevl.ai",
+      url: env.NEXT_PUBLIC_URL,
       should_fallback: true,
     },
   },

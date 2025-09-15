@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
 
-import { createdAt, id, updatedAt } from "@/server/database/schema-helpers";
+import { createdAt, id, updatedAt } from "@/database/schema-helpers";
 import type { PropertyStats } from "@/types/post";
 
 export const PostTable = pgTable("posts", {
