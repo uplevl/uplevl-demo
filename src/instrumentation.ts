@@ -1,13 +1,20 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
+import { env } from "@/env";
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('../sentry.server.config');
-  }
+  Sentry.init({
+    dsn: env.NEXT_PUBLIC_SENTRY_DSN,
+    environment: env.NODE_ENV,
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('../sentry.edge.config');
-  }
+    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+    tracesSampleRate: env.NODE_ENV === "production" ? 1 : 0,
+
+    // Enable logs to be sent to Sentry
+    enableLogs: true,
+
+    // Setting this option to true will print useful information to the console while you're setting up Sentry.
+    debug: false,
+  });
 }
 
 export const onRequestError = Sentry.captureRequestError;
