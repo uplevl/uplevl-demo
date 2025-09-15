@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: Some Zillow data is unknown */
 export interface ZillowPropertyDetails {
   zpid: number;
   city: string;
