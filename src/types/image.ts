@@ -4,7 +4,7 @@ export interface AnalyzedImage {
   url: string;
   filename: Filename;
   description: string;
-  isEstablishingShot?: boolean;
+  isEstablishingShot: boolean;
 }
 
 export interface ImageGroup {

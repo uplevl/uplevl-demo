@@ -4,13 +4,12 @@ import { cn } from "@/lib/utils";
 const typographyVariants = cva("text-brand-deep-gray font-sans", {
   variants: {
     size: {
-      "2xl": "text-2xl -tracking-[0.02em]",
-      xl: "text-xl -tracking-[0.02em]",
-      l: "text-l -tracking-[0.02em]",
-      mp: "text-mp -tracking-[0.02em]",
-      s: "text-s",
-      xs: "text-xs",
-      xsp: "text-xsp",
+      "3xl": "text-4xl -tracking-[0.02em]",
+      "2xl": "text-3xl -tracking-[0.02em]",
+      xl: "text-2xl -tracking-[0.02em]",
+      lg: "text-xl -tracking-[0.02em]",
+      md: "text-base",
+      sm: "text-sm",
     },
     weight: {
       bold: "font-bold",
@@ -23,7 +22,7 @@ const typographyVariants = cva("text-brand-deep-gray font-sans", {
     },
   },
   defaultVariants: {
-    size: "s",
+    size: "md",
     weight: "normal",
     center: false,
   },

@@ -26,7 +26,8 @@ export default inngest.createFunction(
 
       const post = await PostService.create();
       const { id: jobId } = await JobService.create({
-        id: event.id ?? "",
+        // biome-ignore lint/style/noNonNullAssertion: The event ID is always set
+        id: event.id!,
         eventName: event.name,
         stepName: "setup",
         postId: post.id,
@@ -49,7 +50,6 @@ export default inngest.createFunction(
       const snapshotStatus = await step.run("get-snapshot-status", async () => {
         return await PropertyService.getZillowSnapshotStatus(snapshotId);
       });
-      console.log(snapshotStatus);
       parserStatus = snapshotStatus.status;
     }
 

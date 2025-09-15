@@ -9,7 +9,6 @@ export const env = createEnv({
     DB_MIGRATING: z.coerce.boolean().default(false),
     DB_SEEDING: z.coerce.boolean().default(false),
 
-    OPENAI_API_KEY: z.string().min(1),
     OPEN_ROUTER_API_KEY: z.string().min(1),
 
     UPSTASH_REDIS_REST_URL: z.string().min(1),
@@ -31,7 +30,6 @@ export const env = createEnv({
     DB_MIGRATING: process.env.DB_MIGRATING,
     DB_SEEDING: process.env.DB_SEEDING,
     NEXT_PUBLIC_INNGEST_SIGNING_KEY: process.env.NEXT_PUBLIC_INNGEST_SIGNING_KEY,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
