@@ -9,6 +9,9 @@ export const env = createEnv({
     DB_MIGRATING: z.coerce.boolean().default(false),
     DB_SEEDING: z.coerce.boolean().default(false),
 
+    INNGEST_SIGNING_KEY: z.string().min(1),
+    INNGEST_APP_ID: z.string().min(1),
+
     OPEN_ROUTER_API_KEY: z.string().min(1),
 
     UPSTASH_REDIS_REST_URL: z.string().min(1),
@@ -22,7 +25,6 @@ export const env = createEnv({
 
   client: {
     NEXT_PUBLIC_URL: z.string().min(1),
-    NEXT_PUBLIC_INNGEST_SIGNING_KEY: z.string().min(1),
   },
 
   runtimeEnv: {
@@ -31,7 +33,8 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     DB_MIGRATING: process.env.DB_MIGRATING,
     DB_SEEDING: process.env.DB_SEEDING,
-    NEXT_PUBLIC_INNGEST_SIGNING_KEY: process.env.NEXT_PUBLIC_INNGEST_SIGNING_KEY,
+    INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
+    INNGEST_APP_ID: process.env.INNGEST_APP_ID,
     OPEN_ROUTER_API_KEY: process.env.OPEN_ROUTER_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,

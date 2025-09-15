@@ -1,6 +1,8 @@
 import type { ZillowOverview, ZillowProperty } from "./zillow";
 
 export interface PropertyStats {
+  description: string;
+  homeType: string;
   bedrooms: number;
   bathrooms: number;
   squareFeet: number;

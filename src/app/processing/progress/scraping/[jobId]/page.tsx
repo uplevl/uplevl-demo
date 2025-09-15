@@ -1,43 +1,29 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { cva } from "class-variance-authority";
 import {
   BrainIcon,
   CheckCircleIcon,
   DatabaseIcon,
   ImageIcon,
   LayersIcon,
-  LoaderIcon,
   ScanEyeIcon,
   SparklesIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 
-import getJobById from "@/actions/get-job-by-id";
 import Button from "@/components/button";
 import Logo from "@/components/logo";
+import MilestoneCard from "@/components/milestone-card";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
-import { cn } from "@/lib/utils";
+import useJobProgress from "@/hooks/use-job-progress";
 
 export default function ProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
   const router = useRouter();
-
-  const { data } = useQuery({
-    queryKey: ["processing", jobId],
-    queryFn: async () => getJobById(jobId),
-    refetchInterval: ({ state }) => {
-      if (state.data && (state.data.status === "ready" || state.data.status === "failed")) {
-        return false;
-      }
-      return 2000;
-    },
-    refetchIntervalInBackground: true,
-  });
+  const data = useJobProgress(jobId);
 
   const isDone = data?.status === "ready";
 
@@ -147,108 +133,5 @@ export default function ProcessingPage({ params }: { params: Promise<{ jobId: st
         </div>
       )}
     </View>
-  );
-}
-
-interface Milestone {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  steps: { name: string; label: string }[];
-  isActive: boolean;
-  isCompleted: boolean;
-}
-
-const milestoneCardVariants = cva("relative p-4 rounded-xl border-1 transition-all duration-500 shadow-exploration3", {
-  variants: {
-    isActive: {
-      true: "border-brand-blue/20 bg-gradient-to-r from-brand-blue/5 to-brand-blue/10 shadow-exploration1",
-    },
-    isCompleted: {
-      true: "border-brand-green/20 bg-gradient-to-r from-brand-green/5 to-brand-green/10",
-    },
-    isInactive: {
-      true: "border-gray-200 bg-white",
-    },
-  },
-});
-
-const milestoneCardIconVariants = cva("p-1.5 rounded-lg transition-colors duration-300 ease-out", {
-  variants: {
-    isActive: {
-      true: "bg-brand-blue text-white",
-    },
-    isCompleted: {
-      true: "bg-brand-green text-white",
-    },
-    isInactive: {
-      true: "bg-gray-100 text-gray-400",
-    },
-  },
-});
-
-function MilestoneCard({ milestone, currentStep }: { milestone: Milestone; currentStep: string }) {
-  const IconComponent = milestone.icon;
-  const currentStepInMilestone = milestone.steps.find((step) => step.name === currentStep);
-
-  return (
-    <div
-      className={cn(
-        milestoneCardVariants({
-          isActive: milestone.isActive,
-          isCompleted: milestone.isCompleted,
-          isInactive: !milestone.isActive && !milestone.isCompleted,
-        }),
-      )}
-    >
-      <div className="flex items-start gap-4">
-        <div
-          className={cn(
-            milestoneCardIconVariants({
-              isActive: milestone.isActive,
-              isCompleted: milestone.isCompleted,
-              isInactive: !milestone.isActive && !milestone.isCompleted,
-            }),
-          )}
-        >
-          {milestone.isActive ? (
-            <LoaderIcon className="size-4 animate-spin" />
-          ) : milestone.isCompleted ? (
-            <CheckCircleIcon className="size-4" />
-          ) : (
-            <IconComponent className="size-4" />
-          )}
-        </div>
-
-        <div className="flex-1 space-y-3">
-          <div>
-            <Typography
-              weight="semibold"
-              className={`
-              transition-colors duration-300
-              ${milestone.isActive ? "text-brand-blue" : milestone.isCompleted ? "text-brand-green" : "text-gray-700"}
-            `}
-            >
-              {milestone.title}
-            </Typography>
-            <Typography size="sm" className="text-gray-600 mt-1">
-              {milestone.description}
-            </Typography>
-          </div>
-
-          {milestone.isActive && currentStepInMilestone && (
-            <div className="mt-3 p-3 bg-white/80 rounded-lg border border-brand-blue/20">
-              <div className="flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin text-brand-blue" />
-                <Typography size="sm" weight="medium" className="text-brand-blue">
-                  {currentStepInMilestone.label}
-                </Typography>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }

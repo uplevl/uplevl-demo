@@ -5,13 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm, useFormState } from "react-hook-form";
 import z from "zod";
-
+import triggerInngestEvent from "@/actions/trigger-inngest-event";
 import Button from "@/components/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/form";
 import Input from "@/components/input";
 import Logo from "@/components/logo";
 import View from "@/components/view";
-import { inngest } from "@/server/inngest/client";
 
 const formSchema = z.object({
   url: z.string().min(1, { message: "Please enter a URL" }).url({ message: "Please enter a valid URL" }),
@@ -32,12 +31,8 @@ export default function Home() {
   const formState = useFormState(form);
 
   async function handleSubmit({ url }: FormSchema) {
-    const eventResult = await inngest.send({
-      name: "zillow/parse.run",
-      data: { url },
-    });
-    console.log(eventResult);
-    router.push(`/processing/progress/scraping/${eventResult.ids[0]}`);
+    const eventId = await triggerInngestEvent("zillow/parse.run", { url });
+    router.push(`/processing/progress/scraping/${eventId}`);
   }
 
   return (

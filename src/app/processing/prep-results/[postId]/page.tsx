@@ -1,16 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-
-import getPostGroupsByPostId from "@/actions/get-post-groups-by-post-id";
+import triggerInngestEvent from "@/actions/trigger-inngest-event";
 import Button from "@/components/button";
 import Logo from "@/components/logo";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
+import usePostGroups from "@/hooks/use-post-groups";
 import type { getById } from "@/server/repositories/post.repository";
 import type { getByPostId } from "@/server/repositories/post-media-group.repository";
 
@@ -18,10 +17,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
   const { postId } = use(params);
   const router = useRouter();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["post-results", postId],
-    queryFn: async () => getPostGroupsByPostId(postId),
-  });
+  const { data, isLoading } = usePostGroups(postId);
 
   if (isLoading) {
     return (
@@ -50,6 +46,17 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
     );
   }
 
+  let buttonLabel = "Done";
+  if (!data.data.post.hasScripts) buttonLabel = "Generate VoiceOver Scripts";
+  if (!data.data.post.hasVideoReels) buttonLabel = "Generate Video Reels";
+
+  async function handleNextStep() {
+    if (data?.data.post.hasScripts === false) {
+      const eventId = await triggerInngestEvent("post/generate-scripts.run", { postId });
+      router.push(`/processing/progress/generating-scripts/${eventId}`);
+    }
+  }
+
   return (
     <View className="items-center gap-8 pb-10">
       <Logo />
@@ -58,8 +65,8 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
       </Typography>
       <PropertyGroups groups={data.data.groups} />
       <PropertyDetails post={data.data.post} />
-      <Button variant="primary" size="xl" className="w-full" onClick={() => router.push(`/processing/reels/${postId}`)}>
-        Generate Video Reels
+      <Button variant="primary" size="xl" className="w-full" onClick={handleNextStep}>
+        {buttonLabel}
       </Button>
     </View>
   );

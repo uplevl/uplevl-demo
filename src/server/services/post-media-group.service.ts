@@ -1,4 +1,4 @@
-import type { InsertPostMediaGroup } from "@/server/database/schema";
+import type { InsertPostMediaGroup, UpdatePostMediaGroup } from "@/server/database/schema";
 import * as PostMediaGroupRepository from "@/server/repositories/post-media-group.repository";
 
 export async function create(data: InsertPostMediaGroup) {
@@ -12,4 +12,12 @@ export async function create(data: InsertPostMediaGroup) {
 export async function getByPostId(postId: string) {
   const postMediaGroups = await PostMediaGroupRepository.getByPostId(postId);
   return postMediaGroups;
+}
+
+export async function update(id: string, data: UpdatePostMediaGroup) {
+  const [postMediaGroup] = await PostMediaGroupRepository.update(id, data);
+  if (!postMediaGroup) {
+    throw new Error("Failed to update post media group");
+  }
+  return postMediaGroup;
 }
