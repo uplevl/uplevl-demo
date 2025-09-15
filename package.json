@@ -39,6 +39,8 @@
     "next": "15.5.3",
     "p-map": "^7.0.3",
     "postgres": "^3.4.7",
+    "posthog-js": "^1.266.0",
+    "posthog-node": "^5.8.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",

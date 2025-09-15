@@ -1,5 +1,5 @@
 ---
-description: Next.js Rules
+description: apply when interacting with the Next.js application
 globs:
 alwaysApply: true
 ---

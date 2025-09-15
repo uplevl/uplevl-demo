@@ -1,5 +1,5 @@
 ---
-description: Sentry Rules
+description: apply when interacting with Sentry.io tracking tasks
 globs:
 alwaysApply: true
 ---
