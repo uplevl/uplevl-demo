@@ -16,3 +16,5 @@ export async function create(data: InsertPost = {}) {
 export async function update(postId: string, data: UpdatePost) {
   return await db.update(PostTable).set(data).where(eq(PostTable.id, postId)).returning({ id: PostTable.id });
 }
+
+export type Post = NonNullable<Awaited<ReturnType<typeof getById>>>;

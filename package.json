@@ -9,6 +9,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "DB_MIGRATING=true bun run src/server/database/migrate.ts",

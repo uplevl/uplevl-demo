@@ -23,3 +23,5 @@ export async function update(id: string, data: UpdatePostMediaGroup) {
     .where(eq(PostMediaGroupTable.id, id))
     .returning({ id: PostMediaGroupTable.id });
 }
+
+export type PostMediaGroup = NonNullable<Awaited<ReturnType<typeof getByPostId>>>[number];

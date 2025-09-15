@@ -18,7 +18,7 @@ export async function update(id: string, data: UpdateJob) {
 }
 
 export async function getById(id: string) {
-  const [job] = await JobRepository.getById(id);
+  const job = await JobRepository.getById(id);
   if (!job) {
     throw new Error("Post job not found");
   }

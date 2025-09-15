@@ -50,6 +50,8 @@ export function compilePropertyData(snapshot: ZillowPropertyDetails) {
     .join(", ");
 
   const propertyStats: PropertyStats = {
+    description: snapshot.description,
+    homeType: snapshot.homeType,
     bedrooms: snapshot.bedrooms,
     bathrooms: snapshot.bathrooms,
     squareFeet: snapshot.livingArea,

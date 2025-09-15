@@ -1,7 +1,8 @@
 import { generateText } from "ai";
-import type { Post, PostGroup } from "@/actions/get-post-groups-by-post-id";
+import { openRouter } from "@/server/lib/open-router";
+import type { Post } from "@/server/repositories/post.repository";
+import type { PostMediaGroup } from "@/server/repositories/post-media-group.repository";
 import type { VoiceSchema } from "@/types/voice";
-import { openRouter } from "../lib/open-router";
 
 export const DEFAULT_VOICE_SCHEMA: VoiceSchema = {
   tone: "friendly and confident",
@@ -10,7 +11,7 @@ export const DEFAULT_VOICE_SCHEMA: VoiceSchema = {
 } as const satisfies VoiceSchema;
 
 interface GenerateScriptsProps {
-  groups: PostGroup[];
+  groups: PostMediaGroup[];
   propertyStats: Post["propertyStats"];
   location: Post["location"];
   voiceSchema: VoiceSchema;
@@ -44,7 +45,7 @@ export async function generateScripts(props: GenerateScriptsProps) {
 
 interface GenerateScriptPromptProps {
   groupName: string;
-  media: PostGroup["media"];
+  media: PostMediaGroup["media"];
   voiceSchema: VoiceSchema;
   propertyContext: string;
   priorScripts: string[];
@@ -87,7 +88,7 @@ ${
 }
 
 interface GeneratePropertyContextProps {
-  groups: PostGroup[];
+  groups: PostMediaGroup[];
   propertyStats: Post["propertyStats"];
   location: Post["location"];
 }
