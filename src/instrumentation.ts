@@ -6,6 +6,15 @@ export async function register() {
     dsn: env.NEXT_PUBLIC_SENTRY_DSN,
     environment: env.NODE_ENV,
 
+    integrations: [
+      Sentry.vercelAIIntegration({
+        recordInputs: true,
+        recordOutputs: true,
+      }),
+    ],
+
+    sendDefaultPii: true,
+
     // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
     tracesSampleRate: env.NODE_ENV === "production" ? 1 : 0,
 

@@ -3,19 +3,20 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import triggerInngestEvent from "@/actions/trigger-inngest-event";
 import Button from "@/components/button";
 import Logo from "@/components/logo";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import usePostGroups from "@/hooks/use-post-groups";
+import useTriggerInngestEvent from "@/hooks/use-trigger-inngest-event";
 import type { Post } from "@/repositories/post.repository";
 import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 
 export default function PostResultsPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = use(params);
   const router = useRouter();
+  const triggerInngestEvent = useTriggerInngestEvent();
 
   const { data, isLoading } = usePostGroups(postId);
 
@@ -52,7 +53,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
 
   async function handleNextStep() {
     if (data?.data.post.hasScripts === false) {
-      const eventId = await triggerInngestEvent("post/generate-scripts.run", { postId });
+      const { eventId } = await triggerInngestEvent("post/generate-scripts.run", { postId });
       router.push(`/processing/progress/generating-scripts/${eventId}`);
     }
   }

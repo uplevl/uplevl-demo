@@ -35,6 +35,11 @@ export async function generateScripts(props: GenerateScriptsProps) {
     const { text } = await generateText({
       model: openRouter("anthropic/claude-4-sonnet"),
       prompt: [{ role: "user", content: prompt }],
+      experimental_telemetry: {
+        isEnabled: true,
+        recordInputs: true,
+        recordOutputs: true,
+      },
     });
 
     const cleanedScript = text.trim().replace(/\n+/g, " ");
@@ -133,6 +138,11 @@ async function generatePropertyContext({ groups, propertyStats, location }: Gene
           .join("\n"),
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      recordInputs: true,
+      recordOutputs: true,
+    },
   });
 
   return text;

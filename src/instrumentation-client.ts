@@ -10,6 +10,8 @@ Sentry.init({
   dsn: env.NEXT_PUBLIC_SENTRY_DSN,
   environment: env.NEXT_PUBLIC_NODE_ENV,
 
+  sendDefaultPii: true,
+
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
@@ -34,9 +36,8 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 // Initialize PostHog
 posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-  api_host: "/ingest",
-  ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,
+  api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
   defaults: "2025-05-24",
-  capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
+  capture_exceptions: false, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
   debug: env.NEXT_PUBLIC_NODE_ENV === "development",
 });

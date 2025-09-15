@@ -64,6 +64,11 @@ async function analyzeImage(file: File, url: string) {
         content: [{ type: "image", image: inlineImageUrl }],
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      recordInputs: true,
+      recordOutputs: true,
+    },
   });
 
   // const content = result.choices[0].message.content;
@@ -157,20 +162,6 @@ function combineGroupsWithDescribedImages(
   groups: ImageGroupWithImages[],
   descriptions: AnalyzedImage[],
 ): ImageGroupWithDescribedImages[] {
-  // Debug logging for troubleshooting isEstablishingShot issues
-  console.log(
-    "🔍 Debug - Group filenames:",
-    groups.flatMap((g) => g.images),
-  );
-  console.log(
-    "🔍 Debug - Description filenames:",
-    descriptions.map((d) => d.filename),
-  );
-  console.log(
-    "🔍 Debug - isEstablishingShot values:",
-    descriptions.map((d) => ({ filename: d.filename, isEstablishingShot: d.isEstablishingShot })),
-  );
-
   // Create a lookup map for better performance and debugging
   const descriptionLookup = new Map<string, AnalyzedImage>();
   descriptions.forEach((desc) => {
@@ -180,31 +171,32 @@ function combineGroupsWithDescribedImages(
     descriptionLookup.set(nameWithoutExt, desc);
   });
 
-  const combined = groups.map((group) => ({
+  const combined: ImageGroupWithDescribedImages[] = groups.map((group) => ({
     groupName: group.groupName,
-    describedImages: group.images.map((filename) => {
-      // Try exact match first, then without extension
-      let foundDescription = descriptionLookup.get(filename);
-      if (!foundDescription) {
-        const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-        foundDescription = descriptionLookup.get(nameWithoutExt);
-      }
+    describedImages: group.images
+      .map((filename) => {
+        // Try exact match first, then without extension
+        let foundDescription = descriptionLookup.get(filename);
+        if (!foundDescription) {
+          const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
+          foundDescription = descriptionLookup.get(nameWithoutExt);
+        }
 
-      console.log(`🔍 Looking for filename: ${filename}, found:`, foundDescription ? "MATCH" : "NOT FOUND");
+        if (!foundDescription) {
+          console.warn(`⚠️  No description found for filename: ${filename}`);
+          console.warn("Available descriptions:", Array.from(descriptionLookup.keys()));
+          return null;
+        }
 
-      if (!foundDescription) {
-        console.warn(`⚠️  No description found for filename: ${filename}`);
-        console.warn("Available descriptions:", Array.from(descriptionLookup.keys()));
-      }
-
-      return {
-        url: foundDescription?.url ?? "",
-        filename: filename,
-        description: foundDescription?.description ?? "",
-        isEstablishingShot: foundDescription?.isEstablishingShot ?? false,
-      };
-    }),
-  }));
+        return {
+          url: foundDescription?.url ?? "",
+          filename: filename,
+          description: foundDescription?.description ?? "",
+          isEstablishingShot: foundDescription?.isEstablishingShot ?? false,
+        };
+      })
+      .filter(Boolean) as AnalyzedImage[],
+  })) satisfies ImageGroupWithDescribedImages[];
 
   // Merge groups with the same name by combining their describedImages arrays
   const merged = combined.reduce((acc: ImageGroupWithDescribedImages[], group) => {
@@ -228,62 +220,34 @@ function combineGroupsWithDescribedImages(
 }
 
 export async function groupImages(descriptions: AnalyzedImage[]) {
-  try {
-    // Use GPT-4o-mini which works better with generateObject for structured output
-    const { object: groupResult } = await generateObject({
-      model: openRouter("anthropic/claude-3.5-sonnet-20241022"),
-      schema: z.array(
-        z.object({
-          groupName: z.string(),
-          images: z.array(z.string()),
-        }),
-      ),
-      prompt: [
-        { role: "system", content: groupSystemPrompt },
-        { role: "user", content: JSON.stringify(descriptions, null, 2) },
-      ],
-    });
+  const { object: groupResult } = await generateObject({
+    model: openRouter("anthropic/claude-3.5-sonnet-20241022"),
+    schema: z.array(
+      z.object({
+        groupName: z.string(),
+        images: z.array(z.string()),
+      }),
+    ),
+    prompt: [
+      { role: "system", content: groupSystemPrompt },
+      { role: "user", content: JSON.stringify(descriptions, null, 2) },
+    ],
+    experimental_telemetry: {
+      isEnabled: true,
+      recordInputs: true,
+      recordOutputs: true,
+    },
+  });
 
-    console.log("🤖 LLM groupResult:", JSON.stringify(groupResult, null, 2));
-    console.log(
-      "📥 Input descriptions to LLM:",
-      JSON.stringify(
-        descriptions.map((d) => ({ filename: d.filename, isEstablishingShot: d.isEstablishingShot })),
-        null,
-        2,
-      ),
-    );
+  console.log("🤖 LLM groupResult:", JSON.stringify(groupResult, null, 2));
+  console.log(
+    "📥 Input descriptions to LLM:",
+    JSON.stringify(
+      descriptions.map((d) => ({ filename: d.filename, isEstablishingShot: d.isEstablishingShot })),
+      null,
+      2,
+    ),
+  );
 
-    return combineGroupsWithDescribedImages(groupResult, descriptions);
-  } catch (error) {
-    console.warn("generateObject failed, falling back to text parsing:", error);
-
-    // Fallback: use generateText and parse manually
-    const { text } = await generateText({
-      model: openRouter("openai/gpt-4o-mini"),
-      prompt: [
-        { role: "system", content: groupSystemPrompt },
-        { role: "user", content: JSON.stringify(descriptions, null, 2) },
-      ],
-    });
-
-    // Extract JSON from text response
-    let jsonText = text.trim();
-
-    // Remove common wrapper text patterns
-    const jsonStart = jsonText.indexOf("[");
-    const jsonEnd = jsonText.lastIndexOf("]") + 1;
-
-    if (jsonStart !== -1 && jsonEnd > jsonStart) {
-      jsonText = jsonText.substring(jsonStart, jsonEnd);
-    }
-
-    try {
-      const groupResult = JSON.parse(jsonText) as ImageGroupWithImages[];
-      return combineGroupsWithDescribedImages(groupResult, descriptions);
-    } catch (parseError) {
-      console.error("Failed to parse JSON from text response:", parseError);
-      throw new Error("Failed to group images: Invalid JSON response from model");
-    }
-  }
+  return combineGroupsWithDescribedImages(groupResult, descriptions);
 }

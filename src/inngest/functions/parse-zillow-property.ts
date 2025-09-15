@@ -101,8 +101,9 @@ export default inngest.createFunction(
       await JobService.update(jobId, { stepName: "group-photos" });
 
       const groups = await ImageService.groupImages(descriptions as unknown as AnalyzedImage[]);
+      const filteredGroups = groups.filter((group) => group.describedImages.length > 2);
 
-      for (const group of groups) {
+      for (const group of filteredGroups) {
         // Whether the group is an establishing shot (one of the images is marked as an establishing shot)
         const isEstablishingShot = group.describedImages.some((image) => image.isEstablishingShot);
 
