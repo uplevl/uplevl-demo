@@ -7,7 +7,7 @@ import { env } from "@/env";
 
 Sentry.init({
   dsn: env.NEXT_PUBLIC_SENTRY_DSN,
-  environment: env.NODE_ENV,
+  environment: env.NEXT_PUBLIC_NODE_ENV,
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
