@@ -10,6 +10,7 @@ const typographyVariants = cva("text-brand-deep-gray font-sans", {
       lg: "text-xl -tracking-[0.02em]",
       md: "text-base",
       sm: "text-sm",
+      xs: "text-xs",
     },
     weight: {
       bold: "font-bold",

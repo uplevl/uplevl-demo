@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
-
+import type { GenerateScriptsStep, ParseZillowPropertyStep } from "@/constants/events";
 import { createdAt, id, updatedAt } from "@/database/schema-helpers";
 import type { PropertyStats } from "@/types/post";
 
@@ -28,6 +28,7 @@ export type UpdatePost = Partial<InsertPost>;
 
 export const postRelations = relations(PostTable, ({ many }) => ({
   media: many(PostMediaTable),
+  groups: many(PostMediaGroupTable),
   jobs: many(JobTable),
 }));
 
@@ -92,7 +93,7 @@ export const JobTable = pgTable("jobs", {
   }).default("running"),
   error: text("error"),
   eventName: text("event_name").notNull(),
-  stepName: text("step_name"),
+  stepName: text("step_name").$type<ParseZillowPropertyStep | GenerateScriptsStep>(),
   createdAt,
   updatedAt,
 });

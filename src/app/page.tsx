@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import Input from "@/components/input";
 import Logo from "@/components/logo";
 import View from "@/components/view";
+import { PARSE_ZILLOW_PROPERTY_EVENT } from "@/constants/events";
 import useTriggerInngestEvent from "@/hooks/use-trigger-inngest-event";
 
 const formSchema = z.object({
@@ -32,7 +33,7 @@ export default function Home() {
   const formState = useFormState(form);
 
   async function handleSubmit({ url }: FormSchema) {
-    const { eventId } = await triggerInngestEvent("zillow/parse.run", { url });
+    const { eventId } = await triggerInngestEvent(PARSE_ZILLOW_PROPERTY_EVENT, { url });
     router.push(`/processing/progress/scraping/${eventId}`);
   }
 

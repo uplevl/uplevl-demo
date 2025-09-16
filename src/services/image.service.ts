@@ -1,10 +1,8 @@
 import { generateObject, generateText } from "ai";
 import pMap from "p-map";
-import sharp from "sharp";
 import z from "zod";
 
 import { addEntry, getEntry } from "@/lib/cache";
-import { fetchImage } from "@/lib/helpers";
 import { openRouter } from "@/lib/open-router";
 import { bucket } from "@/lib/supabase";
 
@@ -14,43 +12,38 @@ function getStoragePath(userId: string, postId: string) {
   return `${userId}/post_${postId}/uploads/images`;
 }
 
-export async function upload(userId: string, postId: string, files: File[]) {
+async function uploadImage(userId: string, postId: string, file: { file: File; url: string }) {
   const path = getStoragePath(userId, postId);
-  console.log("files", files);
+  const { data, error } = await bucket.upload(`${path}/${file.file.name}`, file.file, {
+    upsert: true,
+  });
 
-  async function uploadImage(file: File) {
-    const { data, error } = await bucket.upload(`${path}/${file.name}`, file, {
-      upsert: true,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return bucket.getPublicUrl(data.path).data.publicUrl;
+  if (error) {
+    console.error("Error uploading image", error);
+    return null;
   }
 
-  const uploadedFiles = await Promise.all(files.map(uploadImage));
-
-  return uploadedFiles;
+  const url = bucket.getPublicUrl(data.path).data.publicUrl;
+  return { file: file.file, originalUrl: file.url, url };
 }
 
-async function analyzeImage(file: File, url: string) {
+export async function upload(userId: string, postId: string, files: { file: File; url: string }[]) {
+  const promises = files.map((file) => uploadImage(userId, postId, file));
+  const responses = await Promise.all(promises);
+  const uploadedFiles = responses.filter(Boolean);
+
+  return uploadedFiles as { file: File; originalUrl: string; url: string }[];
+}
+
+async function analyzeImage(url: string): Promise<AnalyzedImage> {
   // Create cache key based on image URL and current prompt version
   const cacheKey = `image-analysis:v2:${Buffer.from(url).toString("base64")}`;
 
   // Check cache first
-  const cached = await getEntry(cacheKey);
+  const cached = await getEntry<AnalyzedImage>(cacheKey);
   if (cached) {
-    return cached as { description: string; isEstablishingShot: boolean };
+    return cached;
   }
-
-  const buffer = await file.arrayBuffer();
-
-  // Compress image to 512x384 for faster processing while maintaining quality
-  const compressedBuffer = await sharp(buffer).resize(512, 384, { fit: "inside" }).webp({ quality: 75 }).toBuffer();
-
-  const inlineImageUrl = `data:${file.type};base64,${Buffer.from(compressedBuffer).toString("base64")}`;
 
   const { text } = await generateText({
     model: openRouter("openai/gpt-4o-mini"),
@@ -61,7 +54,7 @@ async function analyzeImage(file: File, url: string) {
       },
       {
         role: "user",
-        content: [{ type: "image", image: inlineImageUrl }],
+        content: [{ type: "image", image: url }],
       },
     ],
     experimental_telemetry: {
@@ -86,7 +79,7 @@ async function analyzeImage(file: File, url: string) {
   }
   const description = lines.join("\n").trim();
 
-  const result = { description, isEstablishingShot };
+  const result: AnalyzedImage = { description, isEstablishingShot, url } satisfies AnalyzedImage;
 
   // Cache the result for 24 hours
   await addEntry(cacheKey, result, 60 * 60 * 24);
@@ -95,21 +88,18 @@ async function analyzeImage(file: File, url: string) {
 }
 
 export async function analyzeImages(urls: string[]) {
-  // Pre-fetch all images in parallel for better performance
-  const files = await Promise.all(urls.map(fetchImage));
-
   // Analyze images in parallel with higher concurrency for faster models
   const descriptions = await pMap(
     urls,
-    async (url, index) => {
-      const file = files[index];
-      const { description, isEstablishingShot } = await analyzeImage(file, url);
-      return { url: url, filename: file.name, description, isEstablishingShot };
+    async (url) => {
+      if (!url) return null;
+      const { description, isEstablishingShot } = await analyzeImage(url);
+      return { url: url, description, isEstablishingShot };
     },
     { concurrency: 6 }, // Increased from 3 to 6 for faster models
   );
 
-  return descriptions;
+  return descriptions.filter(Boolean) as AnalyzedImage[];
 }
 
 const groupSystemPrompt = `
@@ -164,36 +154,29 @@ function combineGroupsWithDescribedImages(
 ): ImageGroupWithDescribedImages[] {
   // Create a lookup map for better performance and debugging
   const descriptionLookup = new Map<string, AnalyzedImage>();
-  descriptions.forEach((desc) => {
-    descriptionLookup.set(desc.filename, desc);
-    // Also add without extension as fallback
-    const nameWithoutExt = desc.filename.replace(/\.[^/.]+$/, "");
-    descriptionLookup.set(nameWithoutExt, desc);
-  });
+
+  for (const desc of descriptions) {
+    descriptionLookup.set(desc.url, desc);
+  }
 
   const combined: ImageGroupWithDescribedImages[] = groups.map((group) => ({
     groupName: group.groupName,
     describedImages: group.images
-      .map((filename) => {
+      .map((url) => {
         // Try exact match first, then without extension
-        let foundDescription = descriptionLookup.get(filename);
-        if (!foundDescription) {
-          const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-          foundDescription = descriptionLookup.get(nameWithoutExt);
-        }
+        const foundDescription = descriptionLookup.get(url);
 
         if (!foundDescription) {
-          console.warn(`⚠️  No description found for filename: ${filename}`);
+          console.warn(`⚠️  No description found for url: ${url}`);
           console.warn("Available descriptions:", Array.from(descriptionLookup.keys()));
           return null;
         }
 
         return {
           url: foundDescription?.url ?? "",
-          filename: filename,
           description: foundDescription?.description ?? "",
           isEstablishingShot: foundDescription?.isEstablishingShot ?? false,
-        };
+        } satisfies AnalyzedImage;
       })
       .filter(Boolean) as AnalyzedImage[],
   })) satisfies ImageGroupWithDescribedImages[];
@@ -243,11 +226,14 @@ export async function groupImages(descriptions: AnalyzedImage[]) {
   console.log(
     "📥 Input descriptions to LLM:",
     JSON.stringify(
-      descriptions.map((d) => ({ filename: d.filename, isEstablishingShot: d.isEstablishingShot })),
+      descriptions.map((d) => ({ url: d.url, isEstablishingShot: d.isEstablishingShot })),
       null,
       2,
     ),
   );
 
-  return combineGroupsWithDescribedImages(groupResult, descriptions);
+  const combinedGroups = combineGroupsWithDescribedImages(groupResult, descriptions);
+  const filteredGroups = combinedGroups.filter((group) => group.describedImages.length > 2);
+
+  return filteredGroups;
 }

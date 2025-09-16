@@ -2,7 +2,6 @@ export type Filename = string;
 
 export interface AnalyzedImage {
   url: string;
-  filename: Filename;
   description: string;
   isEstablishingShot: boolean;
 }
@@ -12,7 +11,7 @@ export interface ImageGroup {
 }
 
 export interface ImageGroupWithImages extends ImageGroup {
-  images: Filename[];
+  images: string[];
 }
 
 export interface ImageGroupWithDescribedImages extends ImageGroup {

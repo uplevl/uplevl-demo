@@ -1,7 +1,6 @@
 import z from "zod";
-
+import { GENERATE_SCRIPTS_EVENT, GENERATE_SCRIPTS_STEPS } from "@/constants/events";
 import { inngest } from "@/inngest/client";
-
 import * as JobService from "@/services/job.service";
 import * as PostService from "@/services/post.service";
 import * as PostMediaGroupService from "@/services/post-media-group.service";
@@ -13,17 +12,17 @@ const generateScriptsInputSchema = z.object({
 
 export default inngest.createFunction(
   { id: "generate-scripts" },
-  { event: "post/generate-scripts.run" },
+  { event: GENERATE_SCRIPTS_EVENT },
   async ({ event, step }) => {
     const { postId } = generateScriptsInputSchema.parse(event.data);
     const jobId = event.id ?? "";
 
-    await step.run("setup", async () => {
-      await JobService.update(jobId, { stepName: "setup", postId });
+    await step.run(GENERATE_SCRIPTS_STEPS.SETUP, async () => {
+      await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.SETUP, postId });
     });
 
-    const scripts = await step.run("generate-scripts", async () => {
-      await JobService.update(jobId, { stepName: "generate-scripts" });
+    const scripts = await step.run(GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS, async () => {
+      await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS });
 
       const [post, groups] = await Promise.all([
         PostService.getById(postId),
@@ -38,13 +37,13 @@ export default inngest.createFunction(
       });
     });
 
-    await step.run("update-post-media-groups", async () => {
-      await JobService.update(jobId, { stepName: "update-post-media-groups" });
+    await step.run(GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS, async () => {
+      await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS });
       await Promise.all(scripts.map((item) => PostMediaGroupService.update(item.groupId, { script: item.script })));
     });
 
-    await step.run("finish", async () => {
-      await JobService.update(jobId, { status: "ready", stepName: "finish" });
+    await step.run(GENERATE_SCRIPTS_STEPS.FINISH, async () => {
+      await JobService.update(jobId, { status: "ready", stepName: GENERATE_SCRIPTS_STEPS.FINISH });
     });
   },
 );

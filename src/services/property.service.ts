@@ -1,6 +1,5 @@
 import { brightDataClient } from "@/lib/bright-data";
 import { addEntry, createCacheKey, getEntry } from "@/lib/cache";
-import { fetchImage } from "@/lib/helpers";
 import type { BrightDataSnapshotStatus, BrightDataTriggerResponse } from "@/types/bright-data";
 import type { PropertyStats } from "@/types/post";
 import type { ZillowPropertyDetails } from "@/types/zillow";
@@ -74,25 +73,4 @@ export function compilePropertyData(snapshot: ZillowPropertyDetails) {
   } satisfies PropertyStats;
 
   return { location, propertyStats };
-}
-
-export async function getPropertyPhotos(snapshot: ZillowPropertyDetails) {
-  // Get photo URLs from the snapshot
-  const photoUrls = snapshot.photos
-    // Get the last photo URL from the JPEG sources (the largest photo)
-    .map((photo) => photo.mixedSources.jpeg[photo.mixedSources.jpeg.length - 1]?.url ?? null)
-    .filter(Boolean) as string[];
-
-  const photos: File[] = [];
-
-  for (const url of photoUrls) {
-    try {
-      const file = await fetchImage(url);
-      photos.push(file);
-    } catch (error) {
-      console.error("Error fetching photo", error);
-    }
-  }
-
-  return photos;
 }

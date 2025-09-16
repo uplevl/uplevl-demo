@@ -14,6 +14,13 @@ export async function update(id: string, data: UpdateJob) {
 export async function getById(id: string) {
   return await db.query.JobTable.findFirst({
     where: (job, { eq }) => eq(job.id, id),
+    with: {
+      post: {
+        with: {
+          groups: true,
+        },
+      },
+    },
   });
 }
 

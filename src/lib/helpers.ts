@@ -8,5 +8,5 @@ export async function fetchImage(url: string) {
   const file = new File([buffer], `${filename}.jpg`, {
     type: response.headers.get("content-type") ?? "image/jpeg",
   });
-  return file;
+  return { file, url };
 }

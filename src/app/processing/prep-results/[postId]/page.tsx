@@ -8,8 +8,10 @@ import Logo from "@/components/logo";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
+import { GENERATE_SCRIPTS_EVENT } from "@/constants/events";
 import usePostGroups from "@/hooks/use-post-groups";
 import useTriggerInngestEvent from "@/hooks/use-trigger-inngest-event";
+import { formatPrice } from "@/lib/utils";
 import type { Post } from "@/repositories/post.repository";
 import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 
@@ -53,7 +55,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
 
   async function handleNextStep() {
     if (data?.data.post.hasScripts === false) {
-      const { eventId } = await triggerInngestEvent("post/generate-scripts.run", { postId });
+      const { eventId } = await triggerInngestEvent(GENERATE_SCRIPTS_EVENT, { postId });
       router.push(`/processing/progress/generating-scripts/${eventId}`);
     }
   }
@@ -81,7 +83,7 @@ function PropertyGroups({ groups }: PropertyGroupsProps) {
   return (
     <div className="flex flex-col gap-4 w-full ">
       {groups.map((group) => (
-        <div key={group.id} className="flex flex-col gap-2.5 bg-white rounded-xl p-2.5 shadow-exploration2">
+        <div key={group.id} className="flex flex-col gap-2.5 bg-white rounded-xl p-2.5 shadow-exploration1">
           <Typography as="h3" weight="semibold" className="ml-0.5 leading-4">
             {group.groupName}
           </Typography>
@@ -109,12 +111,12 @@ interface PropertyDetailsProps {
 
 function PropertyDetails({ post }: PropertyDetailsProps) {
   return (
-    <ul className="flex flex-col gap-1 w-full border border-gray-100/60 bg-gradient-to-b from-gray-100/40 to-gray-100/10 rounded-lg p-4 pt-3 shadow-exploration2">
+    <ul className="flex flex-col gap-1 w-full border border-brand-yellow/20 bg-gradient-to-b from-brand-yellow/10 to-white rounded-lg p-4 pt-3 shadow-exploration1">
       <li className="flex items-center gap-4">
         <Typography as="dt" weight="semibold">
           Price:
         </Typography>
-        <Typography as="dd">{post.propertyStats?.price}</Typography>
+        <Typography as="dd">{formatPrice(post.propertyStats?.price ?? 0)}</Typography>
       </li>
       <li className="flex items-center gap-4">
         <Typography as="dt" weight="semibold">

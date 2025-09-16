@@ -3,7 +3,7 @@ import { CheckCircleIcon, LoaderIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Milestone } from "@/types/progress";
 
-const milestoneCardIconVariants = cva("p-1.5 rounded-lg transition-colors duration-300 ease-out", {
+const milestoneCardIconVariants = cva("p-1 rounded-lg transition-colors duration-300 ease-out", {
   variants: {
     isActive: {
       true: "bg-brand-blue text-white",
