@@ -7,4 +7,4 @@ runs:
   steps:
     - name: Copy env example
       shell: bash
-      run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
+      run: find . -path './node_modules' -prune -o -type f -name ".env.example" -exec sh -c 'target="${1%.*}"; [ -e "$target" ] || cp "$1" "$target"' _ {} \;
