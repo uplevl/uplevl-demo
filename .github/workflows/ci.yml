@@ -120,7 +120,7 @@ jobs:
         run: pnpm run lint
 
   cleanup:
-    name: Cleanup Build Artifacts
+    name: Cleanup
     runs-on: ubuntu-latest
     needs: [typecheck, lint]
     if: always()
