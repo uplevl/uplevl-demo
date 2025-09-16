@@ -7,3 +7,10 @@ export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [parseZillowProperty],
 });
+
+// This is needed to run a long running task on Netlify.
+// The default timeout is 30 seconds.
+// @see https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/legacy-runtime/advanced-api-routes/#background-api-routes
+export const config = {
+  type: "experimental-background",
+};
