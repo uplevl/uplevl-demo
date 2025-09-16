@@ -63,5 +63,10 @@
     "netlify-plugin-inngest": "^1.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "engines": {
+    "node": "22.18.0",
+    "pnpm": "9.14.2"
+  },
+  "packageManager": "pnpm@9.14.2"
 }
