@@ -88,6 +88,8 @@ jobs:
         with:
           node-version: 22.18.0
           cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Type check
         run: pnpm run typecheck
 
@@ -111,5 +113,7 @@ jobs:
         with:
           node-version: 22.18.0
           cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
