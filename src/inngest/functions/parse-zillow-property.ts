@@ -15,7 +15,7 @@ const parseZillowInputSchema = z.object({
 });
 
 export default inngest.createFunction(
-  { id: "parse-zillow-property" },
+  { id: "parse-zillow-property", retries: 3 },
   { event: PARSE_ZILLOW_PROPERTY_EVENT },
   async ({ event, step }) => {
     // Tracks the status of the external parser service.

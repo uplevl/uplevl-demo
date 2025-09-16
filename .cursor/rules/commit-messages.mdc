@@ -1,0 +1,77 @@
+---
+description: Commit Message Rules
+alwaysApply: true
+---
+
+# Commit Message Rules
+
+## Format
+
+All commit messages must follow this format:
+
+```
+<type>: <description>
+```
+
+## Type Prefixes
+
+Use one of these prefixes based on the change:
+
+- `feat:` - New features or functionality
+- `refactor:` - Code refactoring (no functional changes)
+- `fix:` - Bug fixes
+- `chore:` - Maintenance tasks, dependencies, build processes
+
+## Core Principles
+
+1. **Keep it simple** - Commit messages should be short, clear, and easy to read
+2. **Focus on the topic** - Describe the overall purpose or topic rather than listing individual changes
+3. **Consider the branch name** - The branch name often indicates the topic you're working on, use this as context
+4. **Single line only** - No multi-line descriptions or body text
+5. **Lowercase** - All text must be in lowercase
+6. **Present tense** - Use present tense (e.g., "add feature" not "added feature")
+7. **No period** - Don't end with a period
+
+## Guidelines for Multiple Changes
+
+When multiple different changes are made:
+
+- **Find the common theme** - Look for the overall topic or purpose
+- **Use general descriptions** - Focus on what the changes accomplish together
+- **Consider the branch context** - The branch name often provides good context for the overall goal
+- **Avoid listing details** - Don't enumerate individual changes
+
+## Special Rules
+
+- **Migration Names** - Don't use the names of the migrations in commit messages, they are random names and don't reflect the changes made
+- **Multiple types** - If code changes reflect multiple commit types (feat, chore, fix), use `feat:` as the fallback
+- **ClickUp integration** - Since ClickUp ticket IDs are automatically prepended by pre-commit hooks, keep messages brief and focused
+
+## Examples
+
+✅ Good:
+
+- `feat: add user authentication`
+- `fix: resolve login errors`
+- `refactor: simplify data fetching`
+- `chore: update dependencies`
+- `feat: implement post review system` (for multiple related changes)
+- `fix: resolve ui issues` (when fixing multiple UI problems)
+- `feat: improve dashboard performance` (general improvement across multiple areas)
+- `refactor: clean up agent settings` (multiple related refactoring changes)
+
+❌ Bad:
+
+- `feat: Add user authentication` (capitalized)
+- `fix: resolved login button not working` (past tense)
+- `refactor: simplify user data fetching.` (ends with period)
+- `feat: add user authentication, update login form, fix validation errors` (too detailed for multiple changes)
+- `feat: add user authentication
+This adds a new authentication system with JWT tokens` (multi-line)
+- `update: something` (invalid prefix)
+- `feat: add user authentication for CU-123456` (redundant ticket reference)
+- `fix: update button styles, fix form validation, resolve api errors` (listing individual changes)
+- `feat: add user authentication
+This adds a new authentication system with JWT tokens` (multi-line)
+- `update: something` (invalid prefix)
+- `feat: add user authentication for CU-123456` (redundant ticket reference)

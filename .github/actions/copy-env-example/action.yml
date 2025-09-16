@@ -1,0 +1,10 @@
+name: Copy env example
+description: Copy env.example to .env
+
+runs:
+  using: composite
+
+  steps:
+    - name: Copy env example
+      shell: bash
+      run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
