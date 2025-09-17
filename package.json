@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare": "husky",
     "dev": "next dev --turbopack",
     "inngest": "pnpm dlx inngest-cli@latest dev",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check",
+    "lint:staged": "lint-staged -q",
     "typecheck": "tsc",
     "format": "biome format --write",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
@@ -59,10 +61,24 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "concurrently": "^9.2.1",
+    "cosmiconfig": "^9.0.0",
     "drizzle-kit": "^0.31.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "netlify-plugin-inngest": "^1.0.1",
     "tailwindcss": "^4",
     "typescript": "5.9.2"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,js,jsx,json,md}": [
+      "biome lint --fix",
+      "biome format --write"
+    ]
+  },
+  "prepare-commit-msg": {
+    "messagePattern": "[$J] $M",
+    "jiraTicketPattern": "(CU-[a-z0-9]+)",
+    "ignoreBranchesMissingTickets": true
   },
   "engines": {
     "node": ">=22.18.0",
