@@ -1,11 +1,10 @@
 import { generateObject, generateText } from "ai";
 import pMap from "p-map";
 import z from "zod";
-
+import { LLM_MODELS } from "@/constants/llm";
 import { addEntry, getEntry } from "@/lib/cache";
 import { openRouter } from "@/lib/open-router";
 import { bucket } from "@/lib/supabase";
-
 import type { AnalyzedImage, ImageGroupWithDescribedImages, ImageGroupWithImages } from "@/types/image";
 
 function getStoragePath(userId: string, postId: string) {
@@ -46,7 +45,7 @@ async function analyzeImage(url: string): Promise<AnalyzedImage> {
   }
 
   const { text } = await generateText({
-    model: openRouter("openai/gpt-4o-mini"),
+    model: openRouter(LLM_MODELS.OPENAI_GPT_4O_MINI),
     prompt: [
       {
         role: "system",
@@ -204,7 +203,7 @@ function combineGroupsWithDescribedImages(
 
 export async function groupImages(descriptions: AnalyzedImage[]) {
   const { object: groupResult } = await generateObject({
-    model: openRouter("anthropic/claude-3.5-sonnet-20241022"),
+    model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_3_5_SONNET_20241022),
     schema: z.array(
       z.object({
         groupName: z.string(),

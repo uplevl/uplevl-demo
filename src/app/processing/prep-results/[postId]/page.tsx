@@ -50,13 +50,13 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
   }
 
   let buttonLabel = "Done";
-  if (!data.data.post.hasScripts) buttonLabel = "Generate VoiceOver Scripts";
   if (!data.data.post.hasVideoReels) buttonLabel = "Generate Video Reels";
+  if (!data.data.post.hasScripts) buttonLabel = "Generate Voice Over Scripts";
 
   async function handleNextStep() {
     if (data?.data.post.hasScripts === false) {
       const { eventId } = await triggerInngestEvent(GENERATE_SCRIPTS_EVENT, { postId });
-      router.push(`/processing/progress/generating-scripts/${eventId}`);
+      router.push(`/processing/progress/scripting/${eventId}`);
     }
   }
 
@@ -99,6 +99,7 @@ function PropertyGroups({ groups }: PropertyGroupsProps) {
               />
             ))}
           </div>
+          {group.script && <Typography size="sm">{group.script}</Typography>}
         </div>
       ))}
     </div>

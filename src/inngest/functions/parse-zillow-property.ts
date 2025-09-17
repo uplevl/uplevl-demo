@@ -107,6 +107,7 @@ export default inngest.createFunction(
           // Upload the images to the storage.
           const uploadedImages = await ImageService.upload("usr_test1234", postId, files);
 
+          // Loop through the images and add them to the post media data
           for (const image of group.describedImages) {
             const mediaUrl = uploadedImages.find((item) => item.originalUrl === image.url)?.url ?? "";
 

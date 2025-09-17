@@ -1,15 +1,47 @@
 import { generateText } from "ai";
-
+import { LLM_MODELS } from "@/constants/llm";
 import { openRouter } from "@/lib/open-router";
 import type { Post } from "@/repositories/post.repository";
 import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 import type { VoiceSchema } from "@/types/voice";
 
+// Estimated speaking rate: ~150 words per minute for natural speech
+// For 20-30 second marketing video: 100-120 words optimal for persuasive content
+const TARGET_SCRIPT_WORDS = 110; // Optimized for marketing drip campaigns
+const MIN_SCRIPT_WORDS = 100; // Minimum for effective marketing content
+
 export const DEFAULT_VOICE_SCHEMA: VoiceSchema = {
-  tone: "friendly and confident",
-  style: "short, vivid sentences that highlight real value",
-  perspective: "spoken in second person, as if guiding a home buyer through the space",
+  tone: "persuasive, emotional, yet professional - perfect for real estate marketing",
+  style: "compelling storytelling that builds desire and urgency",
+  perspective: "spoken in second person, as if personally inviting a buyer to envision their future",
 } as const satisfies VoiceSchema;
+
+/**
+ * Count words in a script text
+ */
+function countWords(text: string): number {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+}
+
+/**
+ * Estimate speaking time in seconds based on word count
+ */
+function estimateSpeakingTime(wordCount: number): number {
+  // Assuming ~150 words per minute for natural speech
+  return Math.round((wordCount / 150) * 60);
+}
+
+/**
+ * Calculate target words per group based on total groups
+ */
+function calculateWordsPerGroup(totalGroups: number): number {
+  // Distribute target words across groups, ensuring we stay within optimal marketing range
+  const wordsPerGroup = Math.floor(TARGET_SCRIPT_WORDS / totalGroups);
+  return Math.max(15, Math.min(wordsPerGroup, 40)); // Min 15, max 40 words per group for marketing content
+}
 
 interface GenerateScriptsProps {
   groups: PostMediaGroup[];
@@ -22,6 +54,7 @@ export async function generateScripts(props: GenerateScriptsProps) {
   const { groups, propertyStats, location, voiceSchema } = props;
   const propertyContext = await generatePropertyContext({ groups, propertyStats, location });
   const scripts: { groupId: string; script: string }[] = [];
+  const targetWordsPerGroup = calculateWordsPerGroup(groups.length);
 
   for (const group of groups) {
     const prompt = generateScriptPrompt({
@@ -30,10 +63,12 @@ export async function generateScripts(props: GenerateScriptsProps) {
       voiceSchema,
       propertyContext,
       priorScripts: scripts.map((s) => s.script),
+      targetWords: targetWordsPerGroup,
+      isEstablishingShot: group.media.some((img) => img.isEstablishingShot),
     });
 
     const { text } = await generateText({
-      model: openRouter("anthropic/claude-4-sonnet"),
+      model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_SONNET_4),
       prompt: [{ role: "user", content: prompt }],
       experimental_telemetry: {
         isEnabled: true,
@@ -42,9 +77,68 @@ export async function generateScripts(props: GenerateScriptsProps) {
       },
     });
 
-    const cleanedScript = text.trim().replace(/\n+/g, " ");
+    let cleanedScript = text
+      .trim()
+      .replace(/\n+/g, " ")
+      // Remove markdown formatting
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove **bold**
+      .replace(/\*(.*?)\*/g, "$1") // Remove *italics*
+      .replace(/_(.*)_/g, "$1") // Remove _underline_
+      // Remove word count annotations
+      .replace(/\*\[.*?\]\*/g, "") // Remove *[18 words exactly]*
+      .replace(/\[.*?\]/g, "") // Remove [any brackets]
+      // Clean up extra spaces
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Validate and adjust if necessary
+    const wordCount = countWords(cleanedScript);
+    if (wordCount > targetWordsPerGroup + 10) {
+      // If significantly over target, try to regenerate with stricter constraints
+      const stricterPrompt = generateScriptPrompt({
+        groupName: group.groupName,
+        media: group.media,
+        voiceSchema,
+        propertyContext,
+        priorScripts: scripts.map((s) => s.script),
+        targetWords: targetWordsPerGroup,
+        isEstablishingShot: group.media.some((img) => img.isEstablishingShot),
+        isStrict: true,
+      });
+
+      const { text: stricterText } = await generateText({
+        model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_SONNET_4),
+        prompt: [{ role: "user", content: stricterPrompt }],
+        experimental_telemetry: {
+          isEnabled: true,
+          recordInputs: true,
+          recordOutputs: true,
+        },
+      });
+
+      cleanedScript = stricterText
+        .trim()
+        .replace(/\n+/g, " ")
+        // Remove markdown formatting
+        .replace(/\*\*(.*?)\*\*/g, "$1") // Remove **bold**
+        .replace(/\*(.*?)\*/g, "$1") // Remove *italics*
+        .replace(/_(.*)_/g, "$1") // Remove _underline_
+        // Remove word count annotations
+        .replace(/\*\[.*?\]\*/g, "") // Remove *[18 words exactly]*
+        .replace(/\[.*?\]/g, "") // Remove [any brackets]
+        // Clean up extra spaces
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     scripts.push({ groupId: group.id, script: cleanedScript });
   }
+
+  // Final validation
+  const totalWords = scripts.reduce((sum, script) => sum + countWords(script.script), 0);
+  const estimatedTime = estimateSpeakingTime(totalWords);
+
+  console.log(`Generated ${scripts.length} scripts with ${totalWords} total words (estimated ${estimatedTime}s)`);
 
   return scripts;
 }
@@ -55,18 +149,29 @@ interface GenerateScriptPromptProps {
   voiceSchema: VoiceSchema;
   propertyContext: string;
   priorScripts: string[];
+  targetWords: number;
+  isEstablishingShot: boolean;
+  isStrict?: boolean;
 }
 
 function generateScriptPrompt(props: GenerateScriptPromptProps) {
-  const { groupName, media, voiceSchema, propertyContext, priorScripts } = props;
+  const { groupName, media, voiceSchema, propertyContext, priorScripts, targetWords, isEstablishingShot, isStrict } =
+    props;
+
+  const strictnessNote = isStrict
+    ? "\n⚠️ CRITICAL: This script was too long. Make it even more concise. Every word counts."
+    : "";
+
   return `
-You are a real estate agent showing a property to a potential buyer. You are speaking to a real person, not an audience.
+You are creating a voiceover script for a ${targetWords}-word segment of a marketing video for a real estate drip campaign.
+
+CRITICAL: Your output must be PLAIN TEXT ONLY - no markdown, no formatting, no annotations, no word counts in brackets.
 
 <PropertyContext>
 ${propertyContext}
 
-<Images>
-${media.map((img) => `- ${img.description}`).join("\n")}
+<ImageDescriptions>
+${media.map((img, index) => `- ${index + 1}: ${img.description}`).join("\n")}
 
 <VoiceGuidelines>
 - Tone: ${voiceSchema.tone}
@@ -74,23 +179,48 @@ ${media.map((img) => `- ${img.description}`).join("\n")}
 - Perspective: ${voiceSchema.perspective}
 
 ${priorScripts.length > 0 ? `<PreviousScripts>\n${priorScripts.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n</PreviousScripts>\n` : ""}
+
+<CriticalConstraints>
+- TARGET: ${targetWords} words (aim for this target, can go ±5 words if needed for flow)
+- PURPOSE: Marketing video for ${isEstablishingShot ? "opening hook with property introduction" : "feature highlight that builds desire"}
+- CAMPAIGN: Part of a real estate drip campaign designed to generate leads and schedule showings
+- TIMING: This segment should fill its portion of a 20-30 second marketing video${strictnessNote}
+
 <Instructions>
-- We are looking at a ${groupName}.
 ${
-  media.some((img) => img.isEstablishingShot)
-    ? `- This is the establishing shot. Open with an emotional hook — a feeling, moment, or imagined scene.
-- Be sure to reference the property's location and price as stated in the property context above. Use natural phrasing (e.g., "in the heart of Bastrop" or "priced around three-fifty"). Do not use digits or currency symbols. Never include the exact street address.
-- Let the viewer imagine themselves arriving, walking up, or enjoying a quiet moment. Paint a vivid moment, not a headline.`
-    : ``
+  isEstablishingShot
+    ? `- OPENING HOOK: Start with powerful emotional impact - paint the dream lifestyle this property offers
+- Include location naturally to establish desirability (e.g., "in prestigious Bastrop" not the address)  
+- Reference price range or value proposition if significant (e.g., "under four hundred" not "$399,000")
+- Create urgency and desire from the first sentence
+- Paint the vision of their future life here`
+    : `- Focus on the most compelling, desire-building aspect of this ${groupName.toLowerCase()}
+- Use emotionally charged, sensory language that makes viewers crave this space
+- Connect to lifestyle benefits - how will this space transform their daily life?
+- Build on the emotional momentum from previous segments`
 }
-- Write 1-2 natural, conversational sentences describing the room or area based on the image descriptions. Do not reference group titles like "Living Room" or "Exterior" in the script.
-- Avoid sounding like an advertisement or scripted pitch.
-- Imagine one friend showing a property to another — relaxed, human, informative.
-- Use subtle, descriptive language, not buzzwords.
-- Maintain a sense of flow and cohesion with previous sections.
-- Do *not* start with "Step into..." or overly formal intros.
-- Only return the script as plain text.
-`;
+
+<MarketingRequirements>
+- Write in persuasive, marketing-focused language that builds desire and urgency
+- Include specific details that make this property irresistible and memorable
+- Use emotional triggers: comfort, luxury, peace, achievement, belonging, security
+- Create a sense of scarcity or exclusivity where appropriate
+- Don't mention room names directly ("living room", "kitchen") - describe the lifestyle experience instead
+- Use language that helps prospects envision their ideal life in this space
+- Include subtle social proof or desirability indicators
+- Weave the call-to-action naturally INTO the narrative flow - don't tack it on at the end
+- CTAs should feel like natural conclusions: "before someone else calls it home" or "while this rare opportunity lasts" or "opportunities like this don't wait" or "your dream home is calling"
+- Examples of natural integration: "This is where your story begins" / "Don't let this sanctuary slip away" / "Your perfect retreat awaits your call"
+- Make every word count toward the sale
+
+<OutputFormat>
+- Return ONLY plain text - no markdown formatting, no bold, no italics, no special characters
+- Do NOT include word counts, annotations, or meta-information in brackets
+- Do NOT use ** for bold or * for italics or any other markdown
+- Write as natural, flowing sentences that sound conversational when spoken
+- Integrate any urgency or CTA language seamlessly into the narrative
+
+WORD COUNT TARGET: ${targetWords} words (aim to reach this target for maximum marketing impact)`;
 }
 
 interface GeneratePropertyContextProps {
@@ -119,9 +249,11 @@ async function generatePropertyContext({ groups, propertyStats, location }: Gene
 <PropertyInfo>${propertyInfo ? `\n${propertyInfo}\n` : ""}
 
 <Instructions>
-- Give a high-level summary of the property, its style, vibe, and selling points. 
-- Be brief but helpful. 
-- This will serve as shared context for generating scripts later.
+- Create a concise property summary focused on key selling points for a 20-30 second social media video
+- Highlight the most compelling features that would grab attention in a short video
+- Include style, location appeal, and standout characteristics
+- Keep it brief - this context will guide multiple short script segments
+- Focus on emotional appeal and unique value propositions
   `;
 
   const { text } = await generateText({
@@ -146,4 +278,60 @@ async function generatePropertyContext({ groups, propertyStats, location }: Gene
   });
 
   return text;
+}
+
+/**
+ * Utility function to analyze and provide feedback on script generation results
+ */
+export function analyzeScriptResults(scripts: { groupId: string; script: string }[]) {
+  const totalWords = scripts.reduce((sum, script) => sum + countWords(script.script), 0);
+  const estimatedTime = estimateSpeakingTime(totalWords);
+  const averageWordsPerGroup = Math.round(totalWords / scripts.length);
+
+  const analysis = {
+    totalScripts: scripts.length,
+    totalWords,
+    estimatedTime,
+    averageWordsPerGroup,
+    isWithinTarget: totalWords >= MIN_SCRIPT_WORDS && totalWords <= TARGET_SCRIPT_WORDS + 30,
+    recommendations: [] as string[],
+  };
+
+  if (totalWords < MIN_SCRIPT_WORDS) {
+    analysis.recommendations.push(
+      `Scripts are ${MIN_SCRIPT_WORDS - totalWords} words under minimum. Add more persuasive content and CTAs.`,
+    );
+  }
+
+  if (totalWords > TARGET_SCRIPT_WORDS + 30) {
+    analysis.recommendations.push(
+      `Scripts are ${totalWords - TARGET_SCRIPT_WORDS} words over target. Consider tightening marketing message.`,
+    );
+  }
+
+  if (estimatedTime < 20) {
+    analysis.recommendations.push(
+      `Estimated ${estimatedTime}s is too short for effective marketing. Add more compelling content.`,
+    );
+  }
+
+  if (estimatedTime > 35) {
+    analysis.recommendations.push(
+      `Estimated ${estimatedTime}s exceeds optimal attention span for social media marketing.`,
+    );
+  }
+
+  if (averageWordsPerGroup < 12) {
+    analysis.recommendations.push(
+      `Average ${averageWordsPerGroup} words per group is low for marketing. Aim for 15-40 words per segment.`,
+    );
+  }
+
+  if (averageWordsPerGroup > 40) {
+    analysis.recommendations.push(
+      `Average ${averageWordsPerGroup} words per group is high. Aim for 15-40 words per segment.`,
+    );
+  }
+
+  return analysis;
 }

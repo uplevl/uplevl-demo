@@ -14,13 +14,23 @@ export default inngest.createFunction(
   { id: "generate-scripts" },
   { event: GENERATE_SCRIPTS_EVENT },
   async ({ event, step }) => {
-    const { postId } = generateScriptsInputSchema.parse(event.data);
-    const jobId = event.id ?? "";
+    const eventId = event.id ?? "";
+    const eventName = event.name;
 
-    await step.run(GENERATE_SCRIPTS_STEPS.SETUP, async () => {
-      await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.SETUP, postId });
+    // Setup the job
+    const { jobId, postId } = await step.run(GENERATE_SCRIPTS_STEPS.SETUP, async () => {
+      const { postId } = generateScriptsInputSchema.parse(event.data);
+      const { id: jobId } = await JobService.create({
+        id: eventId,
+        eventName: eventName,
+        stepName: GENERATE_SCRIPTS_STEPS.SETUP,
+        postId: postId,
+      });
+
+      return { jobId, postId };
     });
 
+    // Generate the scripts
     const scripts = await step.run(GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS, async () => {
       await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS });
 
@@ -37,9 +47,11 @@ export default inngest.createFunction(
       });
     });
 
+    // Update the post media groups with the scripts
     await step.run(GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS, async () => {
       await JobService.update(jobId, { stepName: GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS });
       await Promise.all(scripts.map((item) => PostMediaGroupService.update(item.groupId, { script: item.script })));
+      await PostService.update(postId, { hasScripts: true });
     });
 
     await step.run(GENERATE_SCRIPTS_STEPS.FINISH, async () => {

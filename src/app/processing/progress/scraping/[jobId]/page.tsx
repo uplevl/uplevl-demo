@@ -12,21 +12,9 @@ import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import { PARSE_ZILLOW_PROPERTY_STEPS } from "@/constants/events";
 import useJobProgress from "@/hooks/use-job-progress";
-import { formatPrice } from "@/lib/utils";
+import { buildMilestones, formatPrice } from "@/lib/utils";
 import type { PropertyStats } from "@/types/post";
 import type { Milestone } from "@/types/progress";
-
-interface BuildMilestonesProps {
-  milestone: Omit<Milestone, "outcomes">;
-  buildOutcomes: () => string[];
-}
-
-function buildMilestones({ milestone, buildOutcomes }: BuildMilestonesProps): Milestone {
-  return {
-    ...milestone,
-    outcomes: milestone.isCompleted ? buildOutcomes() : [],
-  } satisfies Milestone;
-}
 
 function getPropertyStatsSummary(propertyStats: PropertyStats): string {
   return [
@@ -38,7 +26,7 @@ function getPropertyStatsSummary(propertyStats: PropertyStats): string {
     .join(" | ");
 }
 
-export default function ProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
+export default function ScrapingProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
   const router = useRouter();
   const data = useJobProgress(jobId);
