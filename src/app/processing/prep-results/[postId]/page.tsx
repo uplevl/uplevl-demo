@@ -8,6 +8,7 @@ import Logo from "@/components/logo";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
+import VoiceOverScript from "@/components/voice-over-script";
 import { GENERATE_SCRIPTS_EVENT } from "@/constants/events";
 import usePostGroups from "@/hooks/use-post-groups";
 import useTriggerInngestEvent from "@/hooks/use-trigger-inngest-event";
@@ -99,7 +100,7 @@ function PropertyGroups({ groups }: PropertyGroupsProps) {
               />
             ))}
           </div>
-          {group.script && <Typography size="sm">{group.script}</Typography>}
+          <VoiceOverScript script={group.script} />
         </div>
       ))}
     </div>
