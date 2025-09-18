@@ -13,6 +13,16 @@ export async function getByPostId(postId: string) {
   });
 }
 
+export async function getById(id: string) {
+  return await db.query.PostMediaGroupTable.findFirst({
+    where: (postMediaGroup, { eq }) => eq(postMediaGroup.id, id),
+    with: {
+      media: true,
+      post: true,
+    },
+  });
+}
+
 export async function create(data: InsertPostMediaGroup) {
   return await db.insert(PostMediaGroupTable).values(data).returning({ id: PostMediaGroupTable.id });
 }

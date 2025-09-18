@@ -41,8 +41,7 @@ export default inngest.createFunction(
 
       return await ScriptService.generateScripts({
         groups,
-        propertyStats: post.propertyStats,
-        location: post.location,
+        propertyContext: post.propertyContext ?? "",
         voiceSchema: ScriptService.DEFAULT_VOICE_SCHEMA,
       });
     });

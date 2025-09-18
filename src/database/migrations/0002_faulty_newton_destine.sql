@@ -1,0 +1,1 @@
+ALTER TABLE "posts" ADD COLUMN "property_context" text;

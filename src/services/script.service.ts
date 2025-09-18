@@ -2,7 +2,6 @@ import { generateText } from "ai";
 import { LLM_MODELS } from "@/constants/llm";
 import { DEFAULT_VOICE_ID, getAllMarketingTags, getPromptAudioTags, VOICE_MODELS } from "@/constants/voice";
 import { openRouter } from "@/lib/open-router";
-import type { Post } from "@/repositories/post.repository";
 import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 import type { VoiceSchema } from "@/types/voice";
 
@@ -78,15 +77,13 @@ function calculateWordsPerGroup(totalGroups: number): number {
 
 interface GenerateScriptsProps {
   groups: PostMediaGroup[];
-  propertyStats: Post["propertyStats"];
-  location: Post["location"];
+  propertyContext: string;
   voiceSchema: VoiceSchema;
   voiceId?: string;
 }
 
 export async function generateScripts(props: GenerateScriptsProps) {
-  const { groups, propertyStats, location, voiceSchema, voiceId } = props;
-  const propertyContext = await generatePropertyContext({ groups, propertyStats, location });
+  const { groups, propertyContext, voiceSchema, voiceId } = props;
   const scripts: { groupId: string; script: string }[] = [];
   const targetWordsPerGroup = calculateWordsPerGroup(groups.length);
 
@@ -274,63 +271,6 @@ ${
 - Integrate any urgency or CTA language seamlessly into the narrative while staying true to the speaker's character
 
 WORD COUNT TARGET: ${targetWords} words (aim to reach this target for maximum marketing impact)`;
-}
-
-interface GeneratePropertyContextProps {
-  groups: PostMediaGroup[];
-  propertyStats: Post["propertyStats"];
-  location: Post["location"];
-}
-
-async function generatePropertyContext({ groups, propertyStats, location }: GeneratePropertyContextProps) {
-  const propertyInfo = [
-    propertyStats?.description ? `- Description: ${propertyStats.description}` : null,
-    propertyStats?.homeType ? `- Home Type: ${propertyStats.homeType}` : null,
-    location ? `- Location: ${location}` : null,
-    propertyStats?.price ? `- Price: ${propertyStats.price}` : null,
-    propertyStats?.bedrooms ? `- Bedrooms: ${propertyStats.bedrooms}` : null,
-    propertyStats?.bathrooms ? `- Bathrooms: ${propertyStats.bathrooms}` : null,
-    propertyStats?.squareFeet ? `- Square Feet: ${propertyStats.squareFeet}` : null,
-    propertyStats?.lotSize ? `- Lot Size: ${propertyStats.lotSize}` : null,
-    propertyStats?.yearBuilt ? `- Year Built: ${propertyStats.yearBuilt}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const contextPrompt = `
-
-<PropertyInfo>${propertyInfo ? `\n${propertyInfo}\n` : ""}
-
-<Instructions>
-- Create a concise property summary focused on key selling points for a 20-30 second social media video
-- Highlight the most compelling features that would grab attention in a short video
-- Include style, location appeal, and standout characteristics
-- Keep it brief - this context will guide multiple short script segments
-- Focus on emotional appeal and unique value propositions
-  `;
-
-  const { text } = await generateText({
-    model: openRouter("openai/gpt-4o-mini"),
-    prompt: [
-      { role: "system", content: contextPrompt },
-      {
-        role: "user",
-        content: groups
-          .map(
-            (group, i) =>
-              `\n${i + 1}. ${group.groupName}:\n${group.media.map((img) => `   - ${img.description}`).join("\n")}`,
-          )
-          .join("\n"),
-      },
-    ],
-    experimental_telemetry: {
-      isEnabled: true,
-      recordInputs: true,
-      recordOutputs: true,
-    },
-  });
-
-  return text;
 }
 
 /**

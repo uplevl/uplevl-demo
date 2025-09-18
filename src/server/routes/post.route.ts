@@ -22,4 +22,10 @@ export const postRoute = new Hono()
       console.error("Error getting post media groups", error);
       return c.json({ error: error, data: null }, 500);
     }
+  })
+
+  .get("/groups/:groupId", zValidator("param", z.object({ groupId: z.string() })), async (c) => {
+    const { groupId } = c.req.valid("param");
+    const group = await PostMediaGroupService.getById(groupId);
+    return c.json({ error: null, data: group }, 200);
   });
