@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { connection, db } from "@/database";
@@ -17,6 +18,8 @@ import drizzleConfig from "../../drizzle.config";
     console.log("[Uplevl]: ✅ Database migrated successfully");
   } catch (error) {
     console.error("[Uplevl]: ❌ Error migrating database:", error);
+    Sentry.captureException(error);
+    process.exit(1);
   } finally {
     await connection.end();
   }

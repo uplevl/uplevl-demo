@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import * as Sentry from "@sentry/nextjs";
 import { Hono } from "hono";
 import z from "zod";
 
@@ -19,13 +20,20 @@ export const postRoute = new Hono()
 
       return c.json({ error: null, data: { post, groups } }, 200);
     } catch (error) {
+      Sentry.captureException(error);
       console.error("Error getting post media groups", error);
       return c.json({ error: error, data: null }, 500);
     }
   })
 
   .get("/groups/:groupId", zValidator("param", z.object({ groupId: z.string() })), async (c) => {
-    const { groupId } = c.req.valid("param");
-    const group = await PostMediaGroupService.getById(groupId);
-    return c.json({ error: null, data: group }, 200);
+    try {
+      const { groupId } = c.req.valid("param");
+      const group = await PostMediaGroupService.getById(groupId);
+      return c.json({ error: null, data: group }, 200);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error("Error getting post media group", error);
+      return c.json({ error: error, data: null }, 500);
+    }
   });
