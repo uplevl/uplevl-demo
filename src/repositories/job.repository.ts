@@ -4,7 +4,29 @@ import { db } from "@/database";
 import { type InsertJob, JobTable, type UpdateJob } from "@/database/schema";
 
 export async function create(data: InsertJob) {
-  return await db.insert(JobTable).values(data).returning({ id: JobTable.id });
+  // Use onConflictDoNothing to make the insert idempotent
+  const result = await db
+    .insert(JobTable)
+    .values(data)
+    .onConflictDoNothing({ target: JobTable.id })
+    .returning({ id: JobTable.id });
+
+  if (result.length > 0) {
+    // Successfully inserted new record
+    return result;
+  }
+
+  // Record already exists due to conflict, fetch it
+  const existingJob = await db.query.JobTable.findFirst({
+    where: (job, { eq }) => eq(job.id, data.id),
+    columns: { id: true },
+  });
+
+  if (!existingJob) {
+    throw new Error("Failed to create or retrieve job");
+  }
+
+  return [existingJob];
 }
 
 export async function update(id: string, data: UpdateJob) {
