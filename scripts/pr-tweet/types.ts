@@ -9,7 +9,7 @@ export interface PullRequestData {
 export interface TweetDecision {
   shouldTweet: boolean;
   reasoning: string;
-  category?: "feature" | "improvement" | "milestone" | "technical" | "fix";
+  category?: "feature" | "improvement" | "milestone" | "technical" | "fix" | "internal_refactor";
 }
 
 export interface GeneratedTweet {

@@ -12,7 +12,7 @@ const openRouter = createOpenRouter({
 const tweetDecisionSchema = z.object({
   shouldTweet: z.boolean(),
   reasoning: z.string(),
-  category: z.enum(["feature", "improvement", "milestone", "technical", "fix"]).optional(),
+  category: z.enum(["feature", "improvement", "milestone", "technical", "fix", "internal_refactor"]).optional(),
 });
 
 /**
@@ -44,18 +44,19 @@ AVOID tweeting about:
 - CI/CD tweaks
 - Small typo fixes
 
-Respond with:
+Respond with ONLY a JSON object containing:
 - shouldTweet: true/false
 - reasoning: brief explanation of why this is or isn't worth sharing
 - category: if tweeting, what type of update this is
 
-Be selective - only tweet about genuinely interesting or valuable updates.`;
+Be selective - only tweet about genuinely interesting or valuable updates. Return only the JSON object, no additional text or explanation.`;
 
     const { object } = await generateObject({
       model: openRouter("anthropic/claude-3.5-sonnet"),
       schema: tweetDecisionSchema,
       prompt,
       temperature: 0.3,
+      mode: "json",
     });
 
     return object;
