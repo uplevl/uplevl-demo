@@ -2,8 +2,7 @@ import { Typography } from "@/components/typography";
 import VoiceOverScript from "@/components/voice-over-script";
 import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 import PropertyGroupImage from "./property-group-image";
-
-// import VoiceOverPlayer from "./voice-over-player";
+import VoiceOverPlayer from "./voice-over-player";
 
 interface PropertyGroupCardProps {
   group: PostMediaGroup;
@@ -11,7 +10,7 @@ interface PropertyGroupCardProps {
 
 export default function PropertyGroupCard({ group }: PropertyGroupCardProps) {
   return (
-    <div key={group.id} className="flex flex-col gap-2.5 bg-white rounded-xl p-2.5 shadow-exploration1">
+    <div key={group.id} className="flex flex-col gap-3 bg-white rounded-xl p-3 shadow-exploration1">
       <Typography as="h3" weight="semibold" className="ml-0.5 leading-4">
         {group.groupName}
       </Typography>
@@ -21,7 +20,7 @@ export default function PropertyGroupCard({ group }: PropertyGroupCardProps) {
         ))}
       </div>
       <VoiceOverScript script={group.script} />
-      {/* {Boolean(group.script) && <VoiceOverPlayer groupId={group.id} />} */}
+      {Boolean(group.script) && <VoiceOverPlayer groupId={group.id} />}
     </div>
   );
 }

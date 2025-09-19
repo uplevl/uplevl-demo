@@ -13,7 +13,7 @@ export const VOICE_MODEL_IDS = {
   HUSKY: "EkK5I93UQWFDigLMpZcX",
 };
 
-export const DEFAULT_VOICE_ID = VOICE_MODEL_IDS.LAURA;
+export const DEFAULT_VOICE_ID = VOICE_MODEL_IDS.GRANDPA_SPUDS_OXLEY;
 
 export const VOICE_MODELS: VoiceModel[] = [
   {

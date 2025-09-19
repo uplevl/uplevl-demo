@@ -11,10 +11,10 @@ const buttonVariants = cva(
         tertiary: "border-neutral-300 bg-transparent text-brand-deep-gray",
       },
       size: {
-        sm: "h-9",
-        md: "h-10",
-        lg: "h-11",
-        xl: "h-12",
+        sm: "h-9 px-3 text-sm gap-2",
+        md: "h-10 px-3 text-md gap-3",
+        lg: "h-11 px-4 text-md gap-3",
+        xl: "h-12 px-5 text-md gap-3",
       },
     },
     defaultVariants: {

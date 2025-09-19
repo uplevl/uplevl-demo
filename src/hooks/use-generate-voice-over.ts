@@ -20,22 +20,8 @@ export function useGenerateVoiceOver(groupId: string) {
 
       const group = groupData.data;
 
-      if (group.audioUrl !== null) {
-        return group.audioUrl;
-      }
-
-      const voiceOverResponse = await api.voices["generate-voice-over"][":groupId"].$post({ param: { groupId } });
-      const voiceOverData = await voiceOverResponse.json();
-
-      if (voiceOverData.error) {
-        throw new Error(voiceOverData.error);
-      }
-
-      if (!voiceOverData.data) {
-        throw new Error("Voice over data not found");
-      }
-
-      return voiceOverData.data.audioUrl;
+      // Only return the existing audio URL, don't generate new one
+      return group.audioUrl;
     },
   });
 }

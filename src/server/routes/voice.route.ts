@@ -30,6 +30,7 @@ export const voiceRoute = new Hono()
       });
 
       if (!audioUrl) {
+        console.error("Failed to upload voice over", audioUrl);
         return c.json({ error: "Failed to upload voice over", data: null }, 500);
       }
 

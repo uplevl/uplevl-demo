@@ -32,15 +32,7 @@ function parseScriptWithTags(script: string) {
     const isAudioTag = part.startsWith("[") && part.endsWith("]");
 
     if (isAudioTag) {
-      elements.push(
-        <span
-          key={`audio-tag-${tagCounter++}-${part.slice(1, -1)}`}
-          className="text-brand-blue font-semibold "
-          title="Audio expression tag"
-        >
-          {part}
-        </span>,
-      );
+      elements.push(<VoiceTag key={`audio-tag-${tagCounter++}-${part.slice(1, -1)}`}>{part}</VoiceTag>);
     } else {
       // Regular text
       elements.push(part);
@@ -48,4 +40,15 @@ function parseScriptWithTags(script: string) {
   }
 
   return elements;
+}
+
+function VoiceTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="text-brand-blue font-semibold bg-brand-blue/7 border border-brand-blue/10 rounded-lg px-1.5 py-0.25 text-xs tracking-wide"
+      title="Audio expression tag"
+    >
+      {children}
+    </span>
+  );
 }

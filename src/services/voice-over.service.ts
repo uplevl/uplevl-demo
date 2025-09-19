@@ -10,11 +10,37 @@ function getStoragePath(userId: string, postId: string) {
 
 export async function generateVoiceOver(script: string) {
   try {
-    return await elevenlabs.textToSpeech.convert(VOICE_MODEL_IDS.ARABELLA, {
+    const audioStream = await elevenlabs.textToSpeech.convert(VOICE_MODEL_IDS.ARABELLA, {
       text: script,
       modelId: MODEL_ID,
       outputFormat: AUDIO_OUTPUT_FORMAT,
+      voiceSettings: {
+        stability: 0,
+        speed: 1.2,
+      },
     });
+
+    // Convert ReadableStream to Buffer for Supabase upload
+    const reader = audioStream.getReader();
+    const chunks: Uint8Array[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    // Combine all chunks into a single buffer
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const buffer = new Uint8Array(totalLength);
+    let offset = 0;
+
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    return buffer;
   } catch (error) {
     Sentry.captureException(error);
     throw new Error("Failed to generate voice over");
@@ -25,7 +51,7 @@ interface UploadVoiceOverProps {
   userId: string;
   postId: string;
   groupId: string;
-  audio: ReadableStream<Uint8Array>;
+  audio: Uint8Array;
 }
 
 export async function uploadVoiceOver(props: UploadVoiceOverProps) {
@@ -34,8 +60,9 @@ export async function uploadVoiceOver(props: UploadVoiceOverProps) {
   const filePath = `${path}/${groupId}.mp3`;
 
   try {
-    const { data, error } = await bucket.upload(filePath, audio, {
+    const { error } = await bucket.upload(filePath, audio, {
       upsert: true,
+      contentType: "audio/mpeg",
     });
 
     if (error) {
@@ -55,7 +82,9 @@ export async function uploadVoiceOver(props: UploadVoiceOverProps) {
       return null;
     }
 
-    return data.path;
+    // Get the public URL for the uploaded file
+    const { data: publicUrlData } = bucket.getPublicUrl(filePath);
+    return publicUrlData.publicUrl;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { userId, postId, groupId },

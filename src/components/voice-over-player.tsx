@@ -1,9 +1,12 @@
 "use client";
 
-import { LoaderCircleIcon, PauseIcon, PlayIcon, VolumeIcon } from "lucide-react";
+import { LoaderCircleIcon, MicIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useVoiceGeneration } from "@/contexts/voice-generation-context";
 import { useGenerateVoiceOver } from "@/hooks/use-generate-voice-over";
+import { useGenerateVoiceOverMutation } from "@/hooks/use-generate-voice-over-mutation";
 import Button from "./button";
+import { Typography } from "./typography";
 
 interface VoiceOverPlayerProps {
   groupId: string;
@@ -17,26 +20,36 @@ function formatTime(seconds: number): string {
 
 export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
   const { data: audioUrl, isLoading, error } = useGenerateVoiceOver(groupId);
+  const generateMutation = useGenerateVoiceOverMutation(groupId);
+  const { isGenerating, currentGroupId } = useVoiceGeneration();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !audioUrl) return;
+
+    console.log("Loading audio from URL:", audioUrl);
+
+    // Reset state when new audio loads
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setIsAudioLoading(true);
 
     function handleTimeUpdate() {
       if (audio) {
-        setCurrentTime(audio.currentTime);
+        setCurrentTime(audio.currentTime || 0);
       }
     }
 
     function handleLoadedMetadata() {
       if (audio) {
-        setDuration(audio.duration);
+        console.log("Audio metadata loaded, duration:", audio.duration);
+        setDuration(audio.duration || 0);
         setIsAudioLoading(false);
       }
     }
@@ -52,22 +65,60 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
     function handleEnded() {
       setIsPlaying(false);
       setCurrentTime(0);
+      if (audio) {
+        audio.currentTime = 0;
+      }
     }
 
+    function handleLoadedData() {
+      // Additional event to ensure duration is captured
+      if (audio?.duration) {
+        setDuration(audio.duration);
+      }
+    }
+
+    function handleDurationChange() {
+      // Handle duration changes
+      if (audio) {
+        console.log("Duration changed:", audio.duration);
+        if (audio.duration) {
+          setDuration(audio.duration);
+        }
+      }
+    }
+
+    function handleError(e: Event) {
+      console.error("Audio error:", e);
+      setIsAudioLoading(false);
+    }
+
+    // Add event listeners
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("loadeddata", handleLoadedData);
+    audio.addEventListener("durationchange", handleDurationChange);
     audio.addEventListener("loadstart", handleLoadStart);
     audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+
+    // Set default volume
+    audio.volume = 0.7;
+
+    // Force load the audio
+    audio.load();
 
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("loadeddata", handleLoadedData);
+      audio.removeEventListener("durationchange", handleDurationChange);
       audio.removeEventListener("loadstart", handleLoadStart);
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
     };
-  }, []);
+  }, [audioUrl]); // Re-run when audioUrl changes
 
   function togglePlayPause() {
     const audio = audioRef.current;
@@ -110,37 +161,60 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
     }
   }
 
-  function handleVolumeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
+  const isThisGroupGenerating = currentGroupId === groupId;
+  const isAnyGenerating = isGenerating;
 
-    const audio = audioRef.current;
-    if (audio) {
-      audio.volume = newVolume;
-    }
-  }
-
+  // Show loading if initial data is loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg border">
         <LoaderCircleIcon className="size-6 animate-spin mr-2" />
-        <span className="text-sm text-gray-600">Generating voice over...</span>
+        <span className="text-sm text-gray-600">Loading...</span>
       </div>
     );
   }
 
-  if (error) {
+  // Show error if there's an error
+  if (error && !isThisGroupGenerating) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-sm text-red-600">Error: {error.message}</p>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => generateMutation.mutate()}
+          disabled={isAnyGenerating}
+          className="mt-2"
+        >
+          Try Again
+        </Button>
       </div>
     );
   }
 
+  // Show generation status for this group
+  if (isThisGroupGenerating) {
+    return (
+      <div className="flex items-center justify-center p-2 bg-blue-50 rounded-xl border border-blue-100/50">
+        <LoaderCircleIcon className="size-6 animate-spin mr-2 text-blue-600" />
+        <Typography size="sm" className="text-blue-700">
+          Generating voice over...
+        </Typography>
+      </div>
+    );
+  }
+
+  // Show generate button if no audio
   if (!audioUrl) {
     return (
-      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-sm text-gray-600">No audio available</p>
+      <div className="flex flex-col items-center justify-center gap-2 p-2 bg-gray-50 border border-gray-100 rounded-xl">
+        <Typography size="xs" className="text-gray-500">
+          No voice-over generated yet
+        </Typography>
+        <Button variant="primary" size="sm" onClick={() => generateMutation.mutate()} disabled={isAnyGenerating}>
+          <MicIcon className="size-4" />
+          {isAnyGenerating && !isThisGroupGenerating ? "Generation in progress..." : "Generate Voice-Over"}
+        </Button>
       </div>
     );
   }
@@ -148,20 +222,14 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <audio ref={audioRef} src={audioUrl} preload="metadata">
+    <div className="bg-white border border-gray-100 rounded-xl p-2 shadow-sm">
+      <audio ref={audioRef} src={audioUrl} preload="metadata" crossOrigin="anonymous">
         <track kind="captions" srcLang="en" label="English" />
       </audio>
 
       <div className="flex items-center space-x-4">
         {/* Play/Pause Button */}
-        <Button
-          variant="primary"
-          size="md"
-          onClick={togglePlayPause}
-          disabled={isAudioLoading}
-          className="flex-shrink-0 w-10 h-10 p-0"
-        >
+        <Button variant="primary" size="md" onClick={togglePlayPause} disabled={isAudioLoading}>
           {isAudioLoading ? (
             <LoaderCircleIcon className="size-4 animate-spin" />
           ) : isPlaying ? (
@@ -196,29 +264,6 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
               style={{ left: `${progressPercentage}%` }}
             />
           </button>
-        </div>
-
-        {/* Volume Control */}
-        <div className="flex items-center space-x-2 flex-shrink-0">
-          <VolumeIcon className="size-4 text-gray-500" />
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={volume}
-            onChange={handleVolumeChange}
-            className="w-16 h-1 bg-transparent appearance-none cursor-pointer
-                       [&::-webkit-slider-track]:bg-gray-200 [&::-webkit-slider-track]:h-1 [&::-webkit-slider-track]:rounded-sm
-                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-brand-deep-gray 
-                       [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full 
-                       [&::-webkit-slider-thumb]:cursor-pointer
-                       [&::-moz-range-track]:bg-gray-200 [&::-moz-range-track]:h-1 [&::-moz-range-track]:rounded-sm 
-                       [&::-moz-range-track]:border-none
-                       [&::-moz-range-thumb]:bg-brand-deep-gray [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 
-                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none"
-            aria-label="Volume control"
-          />
         </div>
       </div>
     </div>
