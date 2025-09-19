@@ -61,17 +61,30 @@ function getMsgFilePath(gitRoot: string, index = 0): string {
     return join(gitRoot, "COMMIT_EDITMSG");
   }
 
-  // It is Husky 5
+  // Modern Husky (v5+) passes arguments directly via process.argv
+  // The commit message file path should be the first argument after the script name
   if (process.env.HUSKY_GIT_PARAMS === undefined) {
-    const messageFilePath = process.argv.find((arg) => arg.includes(".git"));
-    if (messageFilePath) {
+    // Look for the commit message file path in process.argv
+    // It should be at index 2 (after node and script path)
+    const messageFilePath = process.argv[2];
+    if (messageFilePath?.includes("COMMIT_EDITMSG")) {
+      debug(`Found commit message file path: ${messageFilePath}`);
       return messageFilePath;
-    } else {
-      throw new Error(`You are using Husky 5. Please add $1 to jira-pre-commit-msg's parameters.`);
     }
+
+    // Fallback: search for any argument that looks like a git file path
+    const gitFilePath = process.argv.find((arg) => arg.includes(".git") || arg.includes("COMMIT_EDITMSG"));
+    if (gitFilePath) {
+      debug(`Found git file path: ${gitFilePath}`);
+      return gitFilePath;
+    }
+
+    throw new Error(
+      `You are using Husky 5+. Please ensure $1 is passed to the script. Received args: ${JSON.stringify(process.argv)}`,
+    );
   }
 
-  // Husky 2-4 stashes git hook parameters $* into a HUSKY_GIT_PARAMS env var.
+  // Legacy Husky 2-4 stashes git hook parameters $* into a HUSKY_GIT_PARAMS env var.
   const gitParams = process.env.HUSKY_GIT_PARAMS || "";
 
   // Throw a friendly error if the git params environment variable can't be found – the user may be missing Husky.
@@ -81,7 +94,11 @@ function getMsgFilePath(gitRoot: string, index = 0): string {
 
   // Unfortunately, this will break if there are escaped spaces within a single argument;
   // I don't believe there's a workaround for this without modifying Husky itself
-  return gitParams.split(" ")[index];
+  const params = gitParams.split(" ");
+  if (index >= params.length) {
+    throw new Error(`Invalid parameter index ${index}. Available parameters: ${JSON.stringify(params)}`);
+  }
+  return params[index];
 }
 
 function escapeReplacement(str: string): string {
@@ -248,9 +265,15 @@ export function gitRevParse(cwd = process.cwd(), gitRoot = ""): GitRevParseResul
     const output = execSync(`git ${args.join(" ")}`, {
       cwd,
       encoding: "utf8",
-    }).trim();
+    });
 
-    const [prefix, gitCommonDir] = output.split("\n").map((s) => s.trim().replace(/\\\\/, "/"));
+    // Split by newlines but don't trim the whole output first to preserve empty lines
+    const lines = output.split("\n").map((s) => s.replace(/\\\\/, "/"));
+
+    // The first line is prefix, second line is gitCommonDir
+    // If there are fewer lines, fill with empty strings
+    const prefix = lines[0] || "";
+    const gitCommonDir = (lines[1] || "").trim(); // Only trim the gitCommonDir
 
     return { prefix, gitCommonDir };
   } catch (error) {
@@ -275,6 +298,11 @@ export function getRoot(gitRoot: string): string {
   // See issues above.
   if (gitCommonDir === "--git-common-dir") {
     throw new Error("Husky requires Git >= 2.13.0, please upgrade Git");
+  }
+
+  // Handle empty gitCommonDir
+  if (!gitCommonDir) {
+    throw new Error("Git common directory not found");
   }
 
   return resolve(cwd, gitCommonDir);
