@@ -15,7 +15,8 @@
     "format": "biome format --write",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "DB_MIGRATING=true bun run src/server/database/migrate.ts",
-    "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+    "pr-tweet": "tsx scripts/pr-tweet/index.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "0.7.3",
@@ -67,6 +68,7 @@
     "lint-staged": "^16.1.6",
     "netlify-plugin-inngest": "^1.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "5.9.2"
   },
   "lint-staged": {
