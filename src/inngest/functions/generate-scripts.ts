@@ -14,7 +14,10 @@ export default inngest.createFunction(
   { id: "generate-scripts" },
   { event: GENERATE_SCRIPTS_EVENT },
   async ({ event, step }) => {
-    const eventId = event.id ?? "";
+    if (!event.id) {
+      throw new Error("Missing event id");
+    }
+    const eventId = event.id;
     const eventName = event.name;
 
     // Setup the job

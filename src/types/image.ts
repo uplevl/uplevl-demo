@@ -25,6 +25,7 @@ export interface UploadedImage {
   file: File;
   originalUrl: string;
   url: string;
+  localUrl: string;
   thumbnails: ThumbnailInfo[];
 }
 

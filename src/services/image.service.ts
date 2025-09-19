@@ -72,8 +72,9 @@ async function uploadImage(userId: string, postId: string, file: UploadImageFile
 
     return {
       file: file.file,
-      originalUrl: file.url,
+      originalUrl: originalUrl,
       url: originalUrl,
+      localUrl: file.url,
       thumbnails: thumbnailInfos,
     };
   } catch (error) {

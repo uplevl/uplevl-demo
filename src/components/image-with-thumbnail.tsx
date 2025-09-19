@@ -16,20 +16,42 @@ export default function ImageWithThumbnail({ src, className, thumbnailSize, ...p
 
 /**
  * Constructs a thumbnail URL from an original image URL
- * This function derives the thumbnail path based on the original URL structure
- * @param originalUrl - The original image URL from Supabase storage
+ * This function properly handles URLs with query parameters and hashes by using the URL API
+ * for absolute URLs and manual stripping for relative URLs
+ * @param originalUrl - The original image URL (absolute or relative, may include query params/hashes)
  * @param size - The thumbnail size ("small", "medium", "large")
  * @returns string - The constructed thumbnail URL
  *
  * @example
- * const originalUrl = "https://supabase.co/storage/v1/object/public/bucket/user123/post_456/uploads/images/photo.jpg"
+ * // Absolute URL with query parameters
+ * const originalUrl = "https://supabase.co/storage/v1/object/public/bucket/user123/post_456/uploads/images/photo.jpg?x=1&y=2"
  * const thumbnailUrl = getThumbnailUrlFromOriginal(originalUrl, "medium")
  * // Returns: "https://supabase.co/storage/v1/object/public/bucket/user123/post_456/uploads/images/thumbnails/photo_thumb_300x200.webp"
+ *
+ * @example
+ * // Relative URL with hash
+ * const originalUrl = "/uploads/images/photo.jpg#section1"
+ * const thumbnailUrl = getThumbnailUrlFromOriginal(originalUrl, "medium")
+ * // Returns: "/uploads/images/thumbnails/photo_thumb_300x200.webp"
  */
 export function getThumbnailUrlFromOriginal(originalUrl: string, size: ThumbnailSize = THUMBNAIL_SIZES.MEDIUM): string {
-  // Extract the filename from the original URL
-  const urlParts = originalUrl.split("/");
-  const filename = urlParts[urlParts.length - 1];
+  let cleanedPath: string;
+  let basePath: string;
+
+  try {
+    // Try to parse as absolute URL
+    const url = new URL(originalUrl);
+    cleanedPath = url.pathname;
+    basePath = url.origin + cleanedPath.substring(0, cleanedPath.lastIndexOf("/"));
+  } catch {
+    // Handle relative URL - remove query parameters and hash
+    cleanedPath = originalUrl.split(/[?#]/)[0];
+    basePath = cleanedPath.substring(0, cleanedPath.lastIndexOf("/"));
+  }
+
+  // Extract filename from cleaned path
+  const pathParts = cleanedPath.split("/");
+  const filename = pathParts[pathParts.length - 1];
 
   // Get dimensions for the requested size
   const dimensions = THUMBNAIL_SIZES_CONFIG[size];
@@ -42,8 +64,7 @@ export function getThumbnailUrlFromOriginal(originalUrl: string, size: Thumbnail
   };
   const thumbnailFilename = getThumbnailFilename(filename, thumbnailConfig);
 
-  // Replace the original filename with the thumbnail path
-  const basePath = originalUrl.substring(0, originalUrl.lastIndexOf("/"));
+  // Build the thumbnail URL
   const thumbnailUrl = `${basePath}/thumbnails/${thumbnailFilename}`;
 
   return thumbnailUrl;

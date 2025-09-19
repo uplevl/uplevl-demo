@@ -17,6 +17,10 @@ export const voiceRoute = new Hono()
       const { groupId } = c.req.valid("param");
       const postMediaGroup = await PostMediaGroupService.getById(groupId);
 
+      if (!postMediaGroup) {
+        return c.json({ error: "Post media group not found", data: null }, 404);
+      }
+
       if (!postMediaGroup.script) {
         return c.json({ error: "Post media group script not found", data: null }, 400);
       }

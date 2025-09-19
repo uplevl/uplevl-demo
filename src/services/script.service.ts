@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { generateText } from "ai";
 import { LLM_MODELS } from "@/constants/llm";
 import { DEFAULT_VOICE_ID, getAllMarketingTags, getPromptAudioTags, VOICE_MODELS } from "@/constants/voice";
@@ -39,7 +40,7 @@ function cleanScriptText(text: string): string {
       // Remove markdown formatting
       .replace(/\*\*(.*?)\*\*/g, "$1") // Remove **bold**
       .replace(/\*(.*?)\*/g, "$1") // Remove *italics*
-      .replace(/_(.*)_/g, "$1") // Remove _underline_
+      .replace(/_(.*?)_/g, "$1") // Remove _underline_
       // Remove word count annotations
       .replace(/\*\[.*?\]\*/g, "") // Remove *[18 words exactly]*
       // Remove brackets that are NOT approved audio tags
@@ -127,17 +128,75 @@ export async function generateScripts(props: GenerateScriptsProps) {
         voiceId,
       });
 
-      const { text: stricterText } = await generateText({
-        model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_SONNET_4),
-        prompt: [{ role: "user", content: stricterPrompt }],
-        experimental_telemetry: {
-          isEnabled: true,
-          recordInputs: true,
-          recordOutputs: true,
-        },
-      });
+      try {
+        const { logger } = Sentry;
+        const result = await generateText({
+          model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_SONNET_4),
+          prompt: [{ role: "user", content: stricterPrompt }],
+          experimental_telemetry: {
+            isEnabled: true,
+            recordInputs: true,
+            recordOutputs: true,
+          },
+        });
 
-      cleanedScript = cleanScriptText(stricterText);
+        // Validate that the result contains a valid text property
+        if (!result || typeof result.text !== "string" || !result.text.trim()) {
+          const errorMsg = "Invalid or missing text property in stricter generation result";
+          logger.error(errorMsg, {
+            groupName: group.groupName,
+            groupId: group.id,
+            targetWords: targetWordsPerGroup,
+            originalWordCount: wordCount,
+            resultObject: result,
+            stricterPrompt: stricterPrompt.substring(0, 500), // Log first 500 chars of prompt
+          });
+
+          // Fall back to original script since regeneration failed
+          logger.info("Falling back to original script due to stricter generation failure", {
+            groupName: group.groupName,
+            groupId: group.id,
+            fallbackWordCount: wordCount,
+          });
+        } else {
+          cleanedScript = cleanScriptText(result.text);
+          logger.debug("Successfully regenerated script with stricter constraints", {
+            groupName: group.groupName,
+            groupId: group.id,
+            originalWordCount: wordCount,
+            newWordCount: countWords(cleanedScript),
+          });
+        }
+      } catch (error) {
+        const { logger } = Sentry;
+
+        // Log the full error details and request inputs
+        logger.error("Failed to generate stricter script", {
+          error: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          groupName: group.groupName,
+          groupId: group.id,
+          targetWords: targetWordsPerGroup,
+          originalWordCount: wordCount,
+          stricterPrompt: stricterPrompt.substring(0, 500), // Log first 500 chars of prompt
+          modelConfig: {
+            model: LLM_MODELS.ANTHROPIC_CLAUDE_SONNET_4,
+            telemetryEnabled: true,
+          },
+        });
+
+        // Capture the exception for Sentry monitoring
+        Sentry.captureException(error);
+
+        // Fall back to original script since regeneration failed
+        logger.info("Falling back to original script due to stricter generation error", {
+          groupName: group.groupName,
+          groupId: group.id,
+          fallbackWordCount: wordCount,
+        });
+
+        // Continue with original script - don't rethrow as this is non-critical optimization
+      }
     }
 
     scripts.push({ groupId: group.id, script: cleanedScript });
