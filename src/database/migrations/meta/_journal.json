@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1758146256366,
+      "tag": "0000_flat_epoch",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1758146427899,
+      "tag": "0001_unknown_the_fallen",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758191179584,
+      "tag": "0002_faulty_newton_destine",
+      "breakpoints": true
+    }
+  ]
+}

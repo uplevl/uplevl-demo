@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { eventsRoute } from "@/server/routes/events.route";
 import { jobRoute } from "@/server/routes/job.route";
 import { postRoute } from "@/server/routes/post.route";
+import { voiceRoute } from "./routes/voice.route";
 
 const app = new Hono()
   // Middleware
@@ -13,7 +14,11 @@ const app = new Hono()
   // Routes
   .basePath("/api");
 
-const routes = app.route("/posts", postRoute).route("/jobs", jobRoute).route("/events", eventsRoute);
+const routes = app
+  .route("/posts", postRoute)
+  .route("/jobs", jobRoute)
+  .route("/events", eventsRoute)
+  .route("/voices", voiceRoute);
 
 export type AppType = typeof routes;
 

@@ -1,0 +1,1 @@
+ALTER TABLE "post_media_groups" ADD COLUMN "audio_url" text;

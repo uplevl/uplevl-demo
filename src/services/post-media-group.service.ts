@@ -14,6 +14,14 @@ export async function getByPostId(postId: string) {
   return postMediaGroups;
 }
 
+export async function getById(id: string) {
+  const postMediaGroup = await PostMediaGroupRepository.getById(id);
+  if (!postMediaGroup) {
+    throw new Error("Post media group not found");
+  }
+  return postMediaGroup;
+}
+
 export async function update(id: string, data: UpdatePostMediaGroup) {
   const [postMediaGroup] = await PostMediaGroupRepository.update(id, data);
   if (!postMediaGroup) {

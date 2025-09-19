@@ -1,38 +1,98 @@
 import { generateObject, generateText } from "ai";
 import pMap from "p-map";
 import z from "zod";
-
+import { THUMBNAIL_SIZES_CONFIG } from "@/constants/image";
+import { LLM_MODELS } from "@/constants/llm";
 import { addEntry, getEntry } from "@/lib/cache";
 import { openRouter } from "@/lib/open-router";
 import { bucket } from "@/lib/supabase";
-
-import type { AnalyzedImage, ImageGroupWithDescribedImages, ImageGroupWithImages } from "@/types/image";
+import { generateResponsiveThumbnails } from "@/lib/thumbnail";
+import type {
+  AnalyzedImage,
+  ImageGroupWithDescribedImages,
+  ImageGroupWithImages,
+  ThumbnailInfo,
+  UploadedImage,
+} from "@/types/image";
 
 function getStoragePath(userId: string, postId: string) {
   return `${userId}/post_${postId}/uploads/images`;
 }
 
-async function uploadImage(userId: string, postId: string, file: { file: File; url: string }) {
-  const path = getStoragePath(userId, postId);
-  const { data, error } = await bucket.upload(`${path}/${file.file.name}`, file.file, {
-    upsert: true,
-  });
-
-  if (error) {
-    console.error("Error uploading image", error);
-    return null;
-  }
-
-  const url = bucket.getPublicUrl(data.path).data.publicUrl;
-  return { file: file.file, originalUrl: file.url, url };
+interface UploadImageFile {
+  file: File;
+  url: string;
 }
 
-export async function upload(userId: string, postId: string, files: { file: File; url: string }[]) {
+async function uploadImage(userId: string, postId: string, file: UploadImageFile): Promise<UploadedImage | null> {
+  const path = getStoragePath(userId, postId);
+
+  try {
+    // Upload original image
+    const { data, error } = await bucket.upload(`${path}/${file.file.name}`, file.file, {
+      upsert: true,
+    });
+
+    if (error) {
+      console.error("Error uploading image", error);
+      return null;
+    }
+
+    const originalUrl = bucket.getPublicUrl(data.path).data.publicUrl;
+
+    // Generate and upload thumbnails
+    const responsiveThumbnails = await generateResponsiveThumbnails(file.file);
+    const thumbnailInfos: ThumbnailInfo[] = [];
+
+    for (const thumbnail of responsiveThumbnails) {
+      const thumbnailPath = `${path}/thumbnails/${thumbnail.filename}`;
+
+      const { data: thumbnailData, error: thumbnailError } = await bucket.upload(thumbnailPath, thumbnail.buffer, {
+        upsert: true,
+        contentType: "image/webp",
+      });
+
+      if (thumbnailError) {
+        console.error(`Error uploading thumbnail ${thumbnail.size}:`, thumbnailError);
+        continue; // Skip this thumbnail but continue with others
+      }
+
+      const thumbnailUrl = bucket.getPublicUrl(thumbnailData.path).data.publicUrl;
+
+      // Extract dimensions from thumbnail size info
+      const dimensions = THUMBNAIL_SIZES_CONFIG[thumbnail.size as keyof typeof THUMBNAIL_SIZES_CONFIG];
+
+      thumbnailInfos.push({
+        url: thumbnailUrl,
+        size: thumbnail.size,
+        width: dimensions.width,
+        height: dimensions.height,
+      });
+    }
+
+    return {
+      file: file.file,
+      originalUrl: originalUrl,
+      url: originalUrl,
+      localUrl: file.url,
+      thumbnails: thumbnailInfos,
+    };
+  } catch (error) {
+    console.error("Error in uploadImage:", error);
+    return null;
+  }
+}
+
+export async function upload(
+  userId: string,
+  postId: string,
+  files: { file: File; url: string }[],
+): Promise<UploadedImage[]> {
   const promises = files.map((file) => uploadImage(userId, postId, file));
   const responses = await Promise.all(promises);
   const uploadedFiles = responses.filter(Boolean);
 
-  return uploadedFiles as { file: File; originalUrl: string; url: string }[];
+  return uploadedFiles as UploadedImage[];
 }
 
 async function analyzeImage(url: string): Promise<AnalyzedImage> {
@@ -46,7 +106,7 @@ async function analyzeImage(url: string): Promise<AnalyzedImage> {
   }
 
   const { text } = await generateText({
-    model: openRouter("openai/gpt-4o-mini"),
+    model: openRouter(LLM_MODELS.OPENAI_GPT_4O_MINI),
     prompt: [
       {
         role: "system",
@@ -204,7 +264,7 @@ function combineGroupsWithDescribedImages(
 
 export async function groupImages(descriptions: AnalyzedImage[]) {
   const { object: groupResult } = await generateObject({
-    model: openRouter("anthropic/claude-3.5-sonnet-20241022"),
+    model: openRouter(LLM_MODELS.ANTHROPIC_CLAUDE_3_5_SONNET_20241022),
     schema: z.array(
       z.object({
         groupName: z.string(),

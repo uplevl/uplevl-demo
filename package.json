@@ -14,11 +14,12 @@
     "typecheck": "tsc",
     "format": "biome format --write",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "DB_MIGRATING=true bun run src/server/database/migrate.ts",
+    "db:migrate": "DB_MIGRATING=true bun run src/database/migrate.ts",
     "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
     "pr-tweet": "tsx scripts/pr-tweet/index.ts"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.15.0",
     "@hono/zod-validator": "0.7.3",
     "@hookform/resolvers": "^5.2.1",
     "@openrouter/ai-sdk-provider": "^1.2.0",

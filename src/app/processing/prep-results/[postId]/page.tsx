@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { use } from "react";
+
 import Button from "@/components/button";
 import Logo from "@/components/logo";
+import PropertyGroupCard from "@/components/property-group-card";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
@@ -50,13 +51,13 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
   }
 
   let buttonLabel = "Done";
-  if (!data.data.post.hasScripts) buttonLabel = "Generate VoiceOver Scripts";
   if (!data.data.post.hasVideoReels) buttonLabel = "Generate Video Reels";
+  if (!data.data.post.hasScripts) buttonLabel = "Generate Voice Over Scripts";
 
   async function handleNextStep() {
     if (data?.data.post.hasScripts === false) {
       const { eventId } = await triggerInngestEvent(GENERATE_SCRIPTS_EVENT, { postId });
-      router.push(`/processing/progress/generating-scripts/${eventId}`);
+      router.push(`/processing/progress/scripting/${eventId}`);
     }
   }
 
@@ -83,23 +84,7 @@ function PropertyGroups({ groups }: PropertyGroupsProps) {
   return (
     <div className="flex flex-col gap-4 w-full ">
       {groups.map((group) => (
-        <div key={group.id} className="flex flex-col gap-2.5 bg-white rounded-xl p-2.5 shadow-exploration1">
-          <Typography as="h3" weight="semibold" className="ml-0.5 leading-4">
-            {group.groupName}
-          </Typography>
-          <div className="grid grid-cols-4 gap-1">
-            {group.media.map((media) => (
-              <Image
-                src={media.mediaUrl}
-                key={media.id}
-                alt={media.description ?? ""}
-                width={250}
-                height={250}
-                className="object-cover aspect-square rounded-lg"
-              />
-            ))}
-          </div>
-        </div>
+        <PropertyGroupCard key={group.id} group={group} />
       ))}
     </div>
   );

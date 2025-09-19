@@ -1,5 +1,12 @@
+import * as Sentry from "@sentry/nextjs";
+import { generateText } from "ai";
+
+import { LLM_MODELS } from "@/constants/llm";
 import { brightDataClient } from "@/lib/bright-data";
 import { addEntry, createCacheKey, getEntry } from "@/lib/cache";
+import { openRouter } from "@/lib/open-router";
+import type { Post } from "@/repositories/post.repository";
+import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
 import type { BrightDataSnapshotStatus, BrightDataTriggerResponse } from "@/types/bright-data";
 import type { PropertyStats } from "@/types/post";
 import type { ZillowPropertyDetails } from "@/types/zillow";
@@ -73,4 +80,90 @@ export function compilePropertyData(snapshot: ZillowPropertyDetails) {
   } satisfies PropertyStats;
 
   return { location, propertyStats };
+}
+
+interface GeneratePropertyContextProps {
+  groups: PostMediaGroup[];
+  propertyStats: Post["propertyStats"];
+  location: Post["location"];
+}
+
+/**
+ * Generates property context summary for social media using AI
+ * @param groups - Media groups associated with the property
+ * @param propertyStats - Statistical information about the property
+ * @param location - Property location string
+ * @returns AI-generated property context summary (20-30 seconds read time)
+ */
+export async function generatePropertyContext({ groups, propertyStats, location }: GeneratePropertyContextProps) {
+  const propertyInfo = [
+    propertyStats?.description ? `- Description: ${propertyStats.description}` : null,
+    propertyStats?.homeType ? `- Home Type: ${propertyStats.homeType}` : null,
+    location ? `- Location: ${location}` : null,
+    propertyStats?.price ? `- Price: ${propertyStats.price}` : null,
+    propertyStats?.bedrooms ? `- Bedrooms: ${propertyStats.bedrooms}` : null,
+    propertyStats?.bathrooms ? `- Bathrooms: ${propertyStats.bathrooms}` : null,
+    propertyStats?.squareFeet ? `- Square Feet: ${propertyStats.squareFeet}` : null,
+    propertyStats?.lotSize ? `- Lot Size: ${propertyStats.lotSize}` : null,
+    propertyStats?.yearBuilt ? `- Year Built: ${propertyStats.yearBuilt}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const contextPrompt = `
+
+<PropertyInfo>${propertyInfo ? `\n${propertyInfo}\n` : ""}
+
+<Instructions>
+- Create a concise property summary focused on key selling points for a 20-30 second social media video
+- Highlight the most compelling features that would grab attention in a short video
+- Include style, location appeal, and standout characteristics
+- Keep it brief - this context will guide multiple short script segments
+- Focus on emotional appeal and unique value propositions
+  `;
+
+  return Sentry.startSpan(
+    {
+      op: "ai.generation",
+      name: "Generate Property Context",
+    },
+    async (span) => {
+      try {
+        span.setAttribute("groups_count", groups.length);
+        span.setAttribute("has_property_stats", !!propertyStats);
+        span.setAttribute("model", LLM_MODELS.OPENAI_GPT_4O_MINI);
+
+        const { text } = await generateText({
+          model: openRouter(LLM_MODELS.OPENAI_GPT_4O_MINI),
+          prompt: [
+            { role: "system", content: contextPrompt },
+            {
+              role: "user",
+              content: groups
+                .map(
+                  (group, i) =>
+                    `\n${i + 1}. ${group.groupName}:\n${group.media.map((img) => `   - ${img.description}`).join("\n")}`,
+                )
+                .join("\n"),
+            },
+          ],
+          experimental_telemetry: {
+            isEnabled: true,
+            recordInputs: true,
+            recordOutputs: true,
+          },
+        });
+
+        span.setAttribute("text_length", text.length);
+        return text;
+      } catch (error) {
+        // Use Sentry as per coding guidelines
+        Sentry.captureException(error, {
+          tags: { service: "property" },
+          extra: { hasGroups: groups.length > 0, hasStats: !!propertyStats },
+        });
+        throw new Error("Failed to generate property context");
+      }
+    },
+  );
 }
