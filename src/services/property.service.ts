@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { generateText } from "ai";
 
+import { LLM_MODELS } from "@/constants/llm";
 import { brightDataClient } from "@/lib/bright-data";
 import { addEntry, createCacheKey, getEntry } from "@/lib/cache";
 import { openRouter } from "@/lib/open-router";
@@ -121,35 +122,48 @@ export async function generatePropertyContext({ groups, propertyStats, location 
 - Focus on emotional appeal and unique value propositions
   `;
 
-  try {
-    const { text } = await generateText({
-      model: openRouter("openai/gpt-4o-mini"),
-      prompt: [
-        { role: "system", content: contextPrompt },
-        {
-          role: "user",
-          content: groups
-            .map(
-              (group, i) =>
-                `\n${i + 1}. ${group.groupName}:\n${group.media.map((img) => `   - ${img.description}`).join("\n")}`,
-            )
-            .join("\n"),
-        },
-      ],
-      experimental_telemetry: {
-        isEnabled: true,
-        recordInputs: true,
-        recordOutputs: true,
-      },
-    });
+  return Sentry.startSpan(
+    {
+      op: "ai.generation",
+      name: "Generate Property Context",
+    },
+    async (span) => {
+      try {
+        span.setAttribute("groups_count", groups.length);
+        span.setAttribute("has_property_stats", !!propertyStats);
+        span.setAttribute("model", LLM_MODELS.OPENAI_GPT_4O_MINI);
 
-    return text;
-  } catch (error) {
-    // Use Sentry as per coding guidelines
-    Sentry.captureException(error, {
-      tags: { service: "property" },
-      extra: { hasGroups: groups.length > 0, hasStats: !!propertyStats },
-    });
-    throw new Error("Failed to generate property context");
-  }
+        const { text } = await generateText({
+          model: openRouter(LLM_MODELS.OPENAI_GPT_4O_MINI),
+          prompt: [
+            { role: "system", content: contextPrompt },
+            {
+              role: "user",
+              content: groups
+                .map(
+                  (group, i) =>
+                    `\n${i + 1}. ${group.groupName}:\n${group.media.map((img) => `   - ${img.description}`).join("\n")}`,
+                )
+                .join("\n"),
+            },
+          ],
+          experimental_telemetry: {
+            isEnabled: true,
+            recordInputs: true,
+            recordOutputs: true,
+          },
+        });
+
+        span.setAttribute("text_length", text.length);
+        return text;
+      } catch (error) {
+        // Use Sentry as per coding guidelines
+        Sentry.captureException(error, {
+          tags: { service: "property" },
+          extra: { hasGroups: groups.length > 0, hasStats: !!propertyStats },
+        });
+        throw new Error("Failed to generate property context");
+      }
+    },
+  );
 }
