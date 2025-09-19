@@ -1,22 +1,22 @@
 const verbose = process.argv.find((arg) => arg === "--verbose");
 const quietLog = process.argv.find((arg) => arg === "--quiet");
 
-module.exports.debug = function debug(message) {
+export function debug(message: string) {
   if (!verbose) {
     return;
   }
 
   console.log(`Prepare commit msg > DEBUG: ${message}`);
-};
+}
 
-module.exports.log = function log(message) {
+export function log(message: string) {
   if (quietLog) {
     return;
   }
 
   console.log(`Prepare commit msg > ${message}`);
-};
+}
 
-module.exports.error = function error(err) {
+export function error(err: string) {
   console.error(`Prepare commit msg > ${err}`);
-};
+}

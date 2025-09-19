@@ -1,8 +1,11 @@
-const { cosmiconfig } = require("cosmiconfig");
+import { createRequire } from "node:module";
+import { isAbsolute, resolve as resolvePath } from "node:path";
+import { cosmiconfig } from "cosmiconfig";
 
-const { debug, error } = require("./log.cjs");
+import type { CommitConfig } from "./git";
+import { debug, error } from "./log";
 
-const defaultConfig = {
+const defaultConfig: CommitConfig = {
   allowEmptyCommitMessage: false,
   allowReplaceAllOccurrences: true,
   commentChar: "#",
@@ -15,15 +18,21 @@ const defaultConfig = {
   messagePattern: "[$J] $M",
 };
 
-function resolveConfig(configPath) {
+function resolveConfig(configPath: string) {
   try {
+    // Try to use require.resolve when available (CommonJS context)
+    const require = createRequire(import.meta.url);
     return require.resolve(configPath);
   } catch {
-    return configPath;
+    // Fall back to path resolution for ESM/tsx contexts
+    if (isAbsolute(configPath)) {
+      return configPath;
+    }
+    return resolvePath(process.cwd(), configPath);
   }
 }
 
-module.exports.loadConfig = async function loadConfig(configPath) {
+export async function loadConfig(configPath?: string): Promise<CommitConfig> {
   try {
     const explorer = cosmiconfig("prepare-commit-msg", {
       searchPlaces: [
@@ -52,4 +61,4 @@ module.exports.loadConfig = async function loadConfig(configPath) {
   const result = { ...defaultConfig };
   debug(`Used config: ${JSON.stringify(result)}`);
   return result;
-};
+}
