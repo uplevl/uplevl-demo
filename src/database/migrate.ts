@@ -19,6 +19,7 @@ import drizzleConfig from "../../drizzle.config";
   } catch (error) {
     console.error("[Uplevl]: ❌ Error migrating database:", error);
     Sentry.captureException(error);
+    await Sentry.flush(2000); // Wait up to 2 seconds for Sentry to flush
     process.exit(1);
   } finally {
     await connection.end();
