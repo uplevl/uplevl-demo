@@ -19,28 +19,10 @@
  *
  * Optional Environment Variables:
  * - PR_TWEET_DISABLED: When truthy, disables tweet posting while still running analysis
- * - SENTRY_DSN: Sentry DSN for error tracking and performance monitoring
  */
 
-import * as Sentry from "@sentry/nextjs";
 import { analyzePRAndGenerateTweet } from "./agents";
 import { extractPullRequestData, logPRAnalysis, postTweetViaIFTTT } from "./utils";
-
-// Initialize Sentry for error tracking with special tagging for automation
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV || "production",
-});
-
-// Set global tags and context for marketing automation
-Sentry.setTags({
-  service: "pr-tweet-automation",
-  category: "marketing-automation",
-  external: "true",
-});
-
-Sentry.setExtra("automationType", "pr-tweet");
-Sentry.setExtra("description", "External marketing automation for PR announcements");
 
 async function main(): Promise<void> {
   try {
@@ -64,86 +46,8 @@ async function main(): Promise<void> {
     console.log(`📋 Processing PR #${prData.number}: "${prData.title}"`);
     console.log(`🔗 Repository: ${prData.repoName}\n`);
 
-    // Analyze PR with LLM agents wrapped in Sentry instrumentation
-    const result = await Sentry.startSpan(
-      {
-        op: "ai.analysis",
-        name: "Analyze PR and Generate Tweet",
-      },
-      async (span) => {
-        // Add relevant attributes for tracing
-        span.setAttribute("pr.number", prData.number);
-        span.setAttribute("pr.title", prData.title);
-        span.setAttribute("repo.name", prData.repoName);
-        span.setAttribute("service", "pr-tweet-automation");
-        span.setAttribute("category", "marketing-automation");
-        span.setAttribute("external", "true");
-        span.setAttribute("automation.type", "pr-tweet");
-
-        // Add breadcrumb for analysis start
-        Sentry.addBreadcrumb({
-          message: "Starting PR analysis",
-          category: "marketing-automation.pr-analysis",
-          level: "info",
-          data: {
-            prNumber: prData.number,
-            prTitle: prData.title,
-            repoName: prData.repoName,
-            automationType: "pr-tweet",
-            external: true,
-          },
-        });
-
-        try {
-          const analysisResult = await analyzePRAndGenerateTweet(prData);
-
-          // Add breadcrumb for successful analysis
-          Sentry.addBreadcrumb({
-            message: "PR analysis completed successfully",
-            category: "marketing-automation.pr-analysis",
-            level: "info",
-            data: {
-              shouldTweet: analysisResult.decision.shouldTweet,
-              reasoning: analysisResult.decision.reasoning,
-              automationType: "pr-tweet",
-              external: true,
-            },
-          });
-
-          return analysisResult;
-        } catch (error) {
-          // Add breadcrumb for analysis failure
-          Sentry.addBreadcrumb({
-            message: "PR analysis failed",
-            category: "marketing-automation.pr-analysis",
-            level: "error",
-            data: {
-              error: error instanceof Error ? error.message : String(error),
-              automationType: "pr-tweet",
-              external: true,
-            },
-          });
-
-          // Capture the exception with additional context
-          Sentry.captureException(error, {
-            tags: {
-              operation: "pr-analysis",
-              prNumber: prData.number,
-              service: "pr-tweet-automation",
-              category: "marketing-automation",
-              external: "true",
-            },
-            extra: {
-              prData,
-              automationType: "pr-tweet",
-              description: "External marketing automation for PR announcements",
-            },
-          });
-
-          throw error;
-        }
-      },
-    );
+    // Analyze PR with LLM agents
+    const result = await analyzePRAndGenerateTweet(prData);
 
     // Log the analysis results
     logPRAnalysis(prData, result.decision.shouldTweet, result.decision.reasoning);
@@ -169,23 +73,9 @@ async function main(): Promise<void> {
 
     // Post the tweet via IFTTT
     console.log("📤 Posting tweet via IFTTT...");
-    await Sentry.startSpan(
-      {
-        op: "marketing-automation.http.client",
-        name: "Post Tweet via IFTTT",
-      },
-      async (span) => {
-        // Mark this span as external marketing automation
-        span.setAttribute("service", "pr-tweet-automation");
-        span.setAttribute("category", "marketing-automation");
-        span.setAttribute("external", "true");
-        span.setAttribute("automation.type", "pr-tweet");
-
-        if (result.tweet) {
-          await postTweetViaIFTTT(result.tweet.content);
-        }
-      },
-    );
+    if (result.tweet) {
+      await postTweetViaIFTTT(result.tweet.content);
+    }
 
     console.log("🎉 PR tweet automation completed successfully!");
     if (result.tweet) {
@@ -193,20 +83,6 @@ async function main(): Promise<void> {
     }
   } catch (error) {
     console.error("❌ PR tweet automation failed:", error);
-
-    // Report error to Sentry with marketing automation context
-    Sentry.captureException(error, {
-      tags: {
-        service: "pr-tweet-automation",
-        category: "marketing-automation",
-        external: "true",
-        operation: "main-function",
-      },
-      extra: {
-        automationType: "pr-tweet",
-        description: "External marketing automation for PR announcements",
-      },
-    });
 
     // Exit with error code to fail the GitHub Action
     process.exit(1);
@@ -216,36 +92,12 @@ async function main(): Promise<void> {
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  Sentry.captureException(reason, {
-    tags: {
-      service: "pr-tweet-automation",
-      category: "marketing-automation",
-      external: "true",
-      operation: "unhandled-rejection",
-    },
-    extra: {
-      automationType: "pr-tweet",
-      description: "External marketing automation for PR announcements",
-    },
-  });
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
-  Sentry.captureException(error, {
-    tags: {
-      service: "pr-tweet-automation",
-      category: "marketing-automation",
-      external: "true",
-      operation: "uncaught-exception",
-    },
-    extra: {
-      automationType: "pr-tweet",
-      description: "External marketing automation for PR announcements",
-    },
-  });
   process.exit(1);
 });
 
