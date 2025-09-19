@@ -96,13 +96,29 @@ You are an expert full-stack web developer focused on producing clear, readable 
 
 ### Server State
 
-- Use **React Query** (`@tanstack/react-query`) for server state management with proper query keys
-- Use **Drizzle ORM** queries in service functions, not directly in components or actions
-- Keep **server actions** in dedicated files under `src/actions/` or co-located with components
+- Use **TanStack Query** (`@tanstack/react-query`) for all server state management with proper query keys
+- Use **Hono client** (`useApi()` hook) for type-safe API communication
+- Use **Drizzle ORM** queries in service functions, accessed via Hono API routes
+- **No server actions** - all mutations go through TanStack Query + Hono API routes
 
 ### Client State
 
 - Use **Zustand** for client-side state that needs to be shared across components
+
+### API Communication Patterns
+
+- Create custom hooks that combine `useApi()` with `useQuery` for data fetching
+- Use `useQuery` for GET operations with proper query keys (e.g., `["post-results", postId]`)
+- Use direct API calls via `useApi()` for mutations (POST, PUT, DELETE)
+- Leverage Hono's type safety for end-to-end type checking from API routes to client
+
+### Hono Client Usage Guidelines
+
+- Always use the `useApi()` hook to get the type-safe Hono client
+- Structure API calls as: `api.{resource}["{param}"].$get|$post|$put|$delete({ param, json, query })`
+- Use Zod validators (`@hono/zod-validator`) in API routes for request validation
+- Keep API routes organized in `src/server/routes/` with clear resource-based naming
+- Export the main app type (`AppType`) from `src/server/app.ts` for client type inference
 
 ## Styling & UI Guidelines
 
@@ -121,8 +137,10 @@ You are an expert full-stack web developer focused on producing clear, readable 
 ## Form Handling
 
 - Use **React Hook Form** with **Zod** validation for all forms
-- Implement **server actions** for form submissions with proper error handling
+- Handle form submissions via **direct API calls** using the `useApi()` hook
+- Combine React Hook Form with TanStack Query patterns for mutations when needed
 - Provide clear **validation feedback** and loading states during form submission
+- Use `useFormState()` to access submission state for loading indicators
 
 ## File Organization
 
@@ -136,7 +154,7 @@ You are an expert full-stack web developer focused on producing clear, readable 
 
 All commit messages must follow this format:
 
-```
+```text
 <type>: <description>
 ```
 
