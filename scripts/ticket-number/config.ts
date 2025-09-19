@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { isAbsolute, resolve as resolvePath } from "node:path";
 import { cosmiconfig } from "cosmiconfig";
 
 import type { CommitConfig } from "./git";
@@ -18,9 +20,15 @@ const defaultConfig: CommitConfig = {
 
 function resolveConfig(configPath: string) {
   try {
+    // Try to use require.resolve when available (CommonJS context)
+    const require = createRequire(import.meta.url);
     return require.resolve(configPath);
   } catch {
-    return configPath;
+    // Fall back to path resolution for ESM/tsx contexts
+    if (isAbsolute(configPath)) {
+      return configPath;
+    }
+    return resolvePath(process.cwd(), configPath);
   }
 }
 
