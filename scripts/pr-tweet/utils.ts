@@ -84,11 +84,10 @@ export async function postTweetViaIFTTT(tweetContent: string): Promise<void> {
 /**
  * Logs PR analysis results
  */
-export function logPRAnalysis(prData: PullRequestData, shouldTweet: boolean, reasoning: string): void {
+export function logPRAnalysis(prData: PullRequestData, shouldTweet: boolean): void {
   console.log("\n📊 PR Analysis Results:");
   console.log(`PR #${prData.number}: ${prData.title}`);
   console.log(`Repository: ${prData.repoName}`);
   console.log(`Should Tweet: ${shouldTweet ? "✅ Yes" : "❌ No"}`);
-  console.log(`Reasoning: ${reasoning}`);
   console.log(`PR URL: ${prData.url}\n`);
 }
