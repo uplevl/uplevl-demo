@@ -11,8 +11,6 @@ const openRouter = createOpenRouter({
 
 const tweetDecisionSchema = z.object({
   shouldTweet: z.boolean(),
-  reasoning: z.string(),
-  category: z.enum(["feature", "improvement", "milestone", "technical", "fix", "internal_refactor"]).optional(),
 });
 
 /**
@@ -46,8 +44,6 @@ AVOID tweeting about:
 
 Respond with ONLY a JSON object containing:
 - shouldTweet: true/false
-- reasoning: brief explanation of why this is or isn't worth sharing
-- category: if tweeting, what type of update this is
 
 Be selective - only tweet about genuinely interesting or valuable updates. Return only the JSON object, no additional text or explanation.`;
 
@@ -64,7 +60,6 @@ Be selective - only tweet about genuinely interesting or valuable updates. Retur
     console.error("Error in tweet decision agent:", error);
     return {
       shouldTweet: false,
-      reasoning: "Error occurred during analysis",
     };
   }
 }
@@ -79,7 +74,7 @@ export async function generateTweetContent(prData: PullRequestData, decision: Tw
 PR Title: "${prData.title}"
 PR Body: "${prData.body || "No description provided"}"
 Repository: ${prData.repoName}
-Category: ${decision.category || "general"}
+Decision: Worth tweeting
 PR URL: ${prData.url}
 
 Guidelines:
@@ -113,7 +108,7 @@ Sometimes the best improvements are invisible to users but make everything feel 
 Write a tweet that matches this style and energy.`;
 
     const { text } = await generateText({
-      model: openRouter("anthropic/claude-3.5-sonnet"),
+      model: openRouter("anthropic/claude-sonnet-4"),
       prompt,
       temperature: 0.7,
     });

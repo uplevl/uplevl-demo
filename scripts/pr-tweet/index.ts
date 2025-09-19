@@ -50,7 +50,7 @@ async function main(): Promise<void> {
     const result = await analyzePRAndGenerateTweet(prData);
 
     // Log the analysis results
-    logPRAnalysis(prData, result.decision.shouldTweet, result.decision.reasoning);
+    logPRAnalysis(prData, result.decision.shouldTweet);
 
     // If not worth tweeting, exit gracefully
     if (!result.decision.shouldTweet) {
