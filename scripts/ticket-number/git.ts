@@ -1,10 +1,47 @@
-const { isAbsolute, join, resolve } = require("node:path");
+import { execSync } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
+import { isAbsolute, join, resolve } from "node:path";
 
-const { debug, log } = require("./log.cjs");
+import { debug, log } from "./log";
+
+/**
+ * Configuration interface for the commit message preparation
+ */
+export interface CommitConfig {
+  allowEmptyCommitMessage: boolean;
+  allowReplaceAllOccurrences: boolean;
+  commentChar: string;
+  gitRoot: string;
+  ignoredBranchesPattern: string;
+  ignoreBranchesMissingTickets: boolean;
+  isConventionalCommit: boolean;
+  conventionalCommitPattern: string;
+  jiraTicketPattern: string;
+  messagePattern: string;
+}
+
+/**
+ * Git rev-parse result interface
+ */
+export interface GitRevParseResult {
+  prefix: string;
+  gitCommonDir: string;
+}
+
+/**
+ * Message info interface for commit message analysis
+ */
+export interface MessageInfo {
+  cleanMessage: string;
+  originalMessage: string;
+  hasAnyText: boolean;
+  hasUserText: boolean;
+  hasVerboseText: boolean;
+}
 
 const gitVerboseStatusSeparator = "------------------------ >8 ------------------------";
 
-function getMsgFilePath(gitRoot, index = 0) {
+function getMsgFilePath(gitRoot: string, index = 0): string {
   debug("getMsgFilePath");
 
   if (gitRoot.length > 0) {
@@ -47,11 +84,11 @@ function getMsgFilePath(gitRoot, index = 0) {
   return gitParams.split(" ")[index];
 }
 
-function escapeReplacement(str) {
+function escapeReplacement(str: string): string {
   return str.replace(/[$]/, "$$$$"); // In replacement to escape $ needs $$
 }
 
-function replaceMessageByPattern(jiraTicket, message, pattern, replaceAll) {
+function replaceMessageByPattern(jiraTicket: string, message: string, pattern: string, replaceAll: boolean): string {
   const jiraTicketRegExp = new RegExp("\\$J", replaceAll ? "g" : "");
   const messageRegExp = new RegExp("\\$M", replaceAll ? "g" : "");
   const result = pattern
@@ -63,14 +100,14 @@ function replaceMessageByPattern(jiraTicket, message, pattern, replaceAll) {
   return result;
 }
 
-function getMessageInfo(message, config) {
+function getMessageInfo(message: string, config: CommitConfig): MessageInfo {
   debug(`Original commit message: ${message}`);
 
   const messageSections = message.split(gitVerboseStatusSeparator)[0];
   const lines = messageSections
     .trim()
     .split("\n")
-    .map((line) => line.trimLeft())
+    .map((line) => line.trimStart())
     .filter((line) => !line.startsWith(config.commentChar));
 
   const cleanMessage = lines.join("\n").trim();
@@ -86,7 +123,7 @@ function getMessageInfo(message, config) {
   };
 }
 
-function findFirstLineToInsert(lines, config) {
+function findFirstLineToInsert(lines: string[], config: CommitConfig): number {
   let firstNotEmptyLine = -1;
 
   for (let i = 0; i < lines.length; ++i) {
@@ -111,9 +148,9 @@ function findFirstLineToInsert(lines, config) {
   return firstNotEmptyLine;
 }
 
-function insertJiraTicketIntoMessage(messageInfo, jiraTicket, config) {
+function insertJiraTicketIntoMessage(messageInfo: MessageInfo, jiraTicket: string, config: CommitConfig): string {
   const message = messageInfo.originalMessage;
-  const lines = message.split("\n").map((line) => line.trimLeft());
+  const lines = message.split("\n").map((line) => line.trimStart());
 
   if (!messageInfo.hasUserText) {
     debug(`User didn't write the message. Allow empty commit is ${String(config.allowEmptyCommitMessage)}`);
@@ -190,7 +227,10 @@ function insertJiraTicketIntoMessage(messageInfo, jiraTicket, config) {
   return lines.join("\n");
 }
 
-module.exports.gitRevParse = function gitRevParse(cwd = process.cwd(), gitRoot = "") {
+/**
+ * Executes git rev-parse command to get git information
+ */
+export function gitRevParse(cwd = process.cwd(), gitRoot = ""): GitRevParseResult {
   const args = [];
 
   // If git root is specified, checking existing work tree
@@ -204,25 +244,24 @@ module.exports.gitRevParse = function gitRevParse(cwd = process.cwd(), gitRoot =
 
   // https://github.com/typicode/husky/issues/580
   // https://github.com/typicode/husky/issues/587
-  const proc = Bun.spawnSync(["git", ...args], {
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  try {
+    const output = execSync(`git ${args.join(" ")}`, {
+      cwd,
+      encoding: "utf8",
+    }).trim();
 
-  if (!proc.success) {
-    throw new Error(proc.stderr?.toString() || "Unknown error");
+    const [prefix, gitCommonDir] = output.split("\n").map((s) => s.trim().replace(/\\\\/, "/"));
+
+    return { prefix, gitCommonDir };
+  } catch (error) {
+    throw new Error(`Git command failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
 
-  const [prefix, gitCommonDir] = proc.stdout
-    .toString()
-    .split("\n")
-    .map((s) => s.trim().replace(/\\\\/, "/"));
-
-  return { prefix, gitCommonDir };
-};
-
-module.exports.getRoot = function getRoot(gitRoot) {
+/**
+ * Gets the git root directory
+ */
+export function getRoot(gitRoot: string): string {
   debug("getRoot");
 
   const cwd = process.cwd();
@@ -239,9 +278,12 @@ module.exports.getRoot = function getRoot(gitRoot) {
   }
 
   return resolve(cwd, gitCommonDir);
-};
+}
 
-module.exports.getBranchName = function getBranchName(gitRoot) {
+/**
+ * Gets the current git branch name
+ */
+export function getBranchName(gitRoot: string): string {
   debug("gitBranchName");
 
   const cwd = process.cwd();
@@ -254,38 +296,43 @@ module.exports.getBranchName = function getBranchName(gitRoot) {
 
   args.push("symbolic-ref", "--short", "HEAD");
 
-  const proc = Bun.spawnSync(["git", ...args], {
-    cwd,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  try {
+    const output = execSync(`git ${args.join(" ")}`, {
+      cwd,
+      encoding: "utf8",
+    });
 
-  if (!proc.success) {
-    throw new Error(proc.stderr?.toString() || "Unknown error");
+    return output.trim();
+  } catch (error) {
+    throw new Error(`Git command failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
 
-  return proc.stdout.toString().trim();
-};
-
-module.exports.getJiraTicket = function getJiraTicket(branchName, config) {
+/**
+ * Extracts JIRA ticket from branch name
+ */
+export function getJiraTicket(branchName: string, config: CommitConfig): string | null {
   debug("getJiraTicket");
 
   const jiraIdPattern = new RegExp(config.jiraTicketPattern, "i");
   const matched = jiraIdPattern.exec(branchName);
-  const jiraTicket = matched && matched[0];
+  const jiraTicket = matched?.[0];
 
   return jiraTicket ?? null;
-};
+}
 
-module.exports.writeJiraTicket = async function writeJiraTicket(jiraTicket, config) {
+/**
+ * Writes JIRA ticket to commit message file
+ */
+export async function writeJiraTicket(jiraTicket: string, config: CommitConfig): Promise<void> {
   debug("writeJiraTicket");
 
   const messageFilePath = getMsgFilePath(config.gitRoot);
-  let message;
+  let message: string;
 
   // Read file with commit message
   try {
-    message = await Bun.file(messageFilePath).text();
+    message = await readFile(messageFilePath, "utf8");
   } catch (ex) {
     console.error(ex);
     throw new Error(`Unable to read the file "${messageFilePath}".`);
@@ -298,9 +345,9 @@ module.exports.writeJiraTicket = async function writeJiraTicket(jiraTicket, conf
 
   // Write message back to file
   try {
-    await Bun.write(messageFilePath, messageWithJiraTicket);
+    await writeFile(messageFilePath, messageWithJiraTicket, "utf8");
   } catch (ex) {
     console.error(ex);
     throw new Error(`Unable to write the file "${messageFilePath}".`);
   }
-};
+}

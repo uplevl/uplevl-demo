@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-const { loadConfig } = require("./config.cjs");
-const { git } = require("./git.cjs");
-const { error, log } = require("./log.cjs");
+import { loadConfig } from "./config.js";
+import { getBranchName, getJiraTicket, getRoot, writeJiraTicket } from "./git.js";
+import { error, log } from "./log.js";
 
 (async () => {
   log("start");
 
   try {
     const config = await loadConfig();
-    const gitRoot = git.getRoot(config.gitRoot);
-    const branch = git.getBranchName(gitRoot);
+    const gitRoot = getRoot(config.gitRoot);
+    const branch = getBranchName(gitRoot);
 
     const ignored = new RegExp(config.ignoredBranchesPattern || "^$", "i");
 
@@ -18,7 +18,7 @@ const { error, log } = require("./log.cjs");
       return;
     }
 
-    const ticket = git.getJiraTicket(branch, config);
+    const ticket = getJiraTicket(branch, config);
 
     if (ticket === null) {
       if (config.ignoreBranchesMissingTickets) {
@@ -32,7 +32,7 @@ const { error, log } = require("./log.cjs");
 
     log(`The JIRA ticket ID is: ${ticket}`);
 
-    git.writeJiraTicket(ticket, config);
+    await writeJiraTicket(ticket, config);
   } catch (err) {
     if (typeof err === "string") {
       error(err);

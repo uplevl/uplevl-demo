@@ -1,1 +1,1 @@
-node ./scripts/ticket-number/index.cjs $1
+npx tsx ./scripts/ticket-number/index.ts $1
