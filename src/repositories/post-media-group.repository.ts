@@ -8,7 +8,9 @@ export async function getByPostId(postId: string) {
     where: (postMediaGroup, { eq }) => eq(postMediaGroup.postId, postId),
     orderBy: (postMediaGroup, { desc }) => desc(postMediaGroup.isEstablishingShot),
     with: {
-      media: true,
+      media: {
+        orderBy: (m, { asc }) => asc(m.createdAt),
+      },
     },
   });
 }
