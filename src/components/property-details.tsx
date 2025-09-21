@@ -15,34 +15,34 @@ export default function PropertyDetails() {
   return (
     <ul className="flex flex-col gap-1 w-full border border-brand-yellow/20 bg-gradient-to-b from-brand-yellow/10 to-white rounded-lg p-4 pt-3 shadow-exploration1">
       <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
+        <Typography as="span" weight="semibold">
           Price:
         </Typography>
-        <Typography as="dd">{formatPrice(post.propertyStats?.price ?? 0)}</Typography>
+        <Typography as="span">{formatPrice(post.propertyStats?.price ?? 0)}</Typography>
       </li>
       <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
+        <Typography as="span" weight="semibold">
           Beds:
         </Typography>
-        <Typography as="dd">{post.propertyStats?.bedrooms}</Typography>
+        <Typography as="span">{post.propertyStats?.bedrooms}</Typography>
       </li>
       <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
+        <Typography as="span" weight="semibold">
           Baths:
         </Typography>
-        <Typography as="dd">{post.propertyStats?.bathrooms}</Typography>
+        <Typography as="span">{post.propertyStats?.bathrooms}</Typography>
       </li>
       <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
+        <Typography as="span" weight="semibold">
           Sqft:
         </Typography>
-        <Typography as="dd">{post.propertyStats?.squareFeet}</Typography>
+        <Typography as="span">{post.propertyStats?.squareFeet}</Typography>
       </li>
       <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
+        <Typography as="span" weight="semibold">
           Address:
         </Typography>
-        <Typography as="dd">{post.location}</Typography>
+        <Typography as="span">{post.location}</Typography>
       </li>
     </ul>
   );
