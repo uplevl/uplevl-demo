@@ -3,6 +3,11 @@ import Crypto from "node:crypto";
 
 export async function fetchImage(url: string) {
   const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText} for ${url}`);
+  }
+
   const buffer = await response.arrayBuffer();
   const filename = Crypto.createHash("md5").update(url).digest("hex");
   const file = new File([buffer], `${filename}.jpg`, {
@@ -13,6 +18,11 @@ export async function fetchImage(url: string) {
 
 export async function fetchVideo(url: string) {
   const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText} for ${url}`);
+  }
+
   const buffer = await response.arrayBuffer();
   const filename = Crypto.createHash("md5").update(url).digest("hex");
   const file = new File([buffer], `${filename}.mp4`, {
