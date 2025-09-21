@@ -6,7 +6,7 @@ import type { PostMediaGroup } from "@/repositories/post-media-group.repository"
 import useApi from "./use-api";
 
 /** Fetches the progress of a job. */
-export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string, entityType?: "post" | "group") {
+export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string, entityType: "post" | "group") {
   const [enabled, setEnabled] = useState(true);
   const api = useApi();
 

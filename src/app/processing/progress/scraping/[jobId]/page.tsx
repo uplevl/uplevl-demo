@@ -30,7 +30,7 @@ function getPropertyStatsSummary(propertyStats: PropertyStats): string {
 export default function ScrapingProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
   const router = useRouter();
-  const data = useJobProgress<Post>(jobId);
+  const data = useJobProgress<Post>(jobId, "post");
 
   const isDone = data?.job?.status === "ready";
 

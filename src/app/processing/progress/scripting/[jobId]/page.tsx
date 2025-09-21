@@ -17,7 +17,7 @@ import type { Milestone } from "@/types/progress";
 export default function ScriptingProgressPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
   const router = useRouter();
-  const data = useJobProgress(jobId);
+  const data = useJobProgress(jobId, "group");
 
   if (!data || !data.job) {
     return <Spinner />;
