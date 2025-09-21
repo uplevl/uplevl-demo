@@ -15,7 +15,10 @@ export default inngest.createFunction(
   { id: "generate-auto-reel" },
   { event: GENERATE_AUTO_REEL_EVENT },
   async ({ event, step }) => {
-    const eventId = event.id ?? "";
+    if (!event.id) {
+      throw new Error("Missing event id");
+    }
+    const eventId = event.id;
     const eventName = event.name;
     let videoStatus: VideoService.Status = "queued";
 
@@ -51,7 +54,10 @@ export default inngest.createFunction(
       const reel = await step.run(GENERATE_AUTO_REEL_STEPS.GET_VIDEO_STATUS, async () => {
         return await VideoService.getReel(videoJobId);
       });
+      // Add sleep to avoid hammering the provider
       videoStatus = reel.status;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     if (videoStatus === "error") {
