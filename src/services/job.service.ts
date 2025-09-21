@@ -17,8 +17,8 @@ export async function update(id: string, data: UpdateJob) {
   return job;
 }
 
-export async function getById(id: string) {
-  const job = await JobRepository.getById(id);
+export async function getById(id: string, entityType?: "post" | "group") {
+  const job = await JobRepository.getById(id, entityType);
   if (!job) {
     throw new Error("Post job not found");
   }

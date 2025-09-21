@@ -1,7 +1,7 @@
-import type { GENERATE_SCRIPTS_EVENT, PARSE_ZILLOW_PROPERTY_EVENT } from "@/constants/events";
+import type { GENERATE_AUTO_REEL_EVENT, GENERATE_SCRIPTS_EVENT, PARSE_ZILLOW_PROPERTY_EVENT } from "@/constants/events";
 import useApi from "./use-api";
 
-type EventName = typeof PARSE_ZILLOW_PROPERTY_EVENT | typeof GENERATE_SCRIPTS_EVENT;
+type EventName = typeof PARSE_ZILLOW_PROPERTY_EVENT | typeof GENERATE_SCRIPTS_EVENT | typeof GENERATE_AUTO_REEL_EVENT;
 
 export default function useTriggerInngestEvent() {
   const api = useApi();

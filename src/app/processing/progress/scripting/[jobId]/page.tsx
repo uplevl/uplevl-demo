@@ -19,11 +19,13 @@ export default function ScriptingProgressPage({ params }: { params: Promise<{ jo
   const router = useRouter();
   const data = useJobProgress(jobId);
 
-  const isDone = data?.status === "ready";
-
-  if (!data) {
+  if (!data || !data.job) {
     return <Spinner />;
   }
+
+  const { job } = data;
+
+  const isDone = job.status === "ready";
 
   const milestones: Milestone[] = [
     buildMilestones({
@@ -37,10 +39,10 @@ export default function ScriptingProgressPage({ params }: { params: Promise<{ jo
           { name: GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS, label: "Writing the script" },
         ],
         isActive:
-          data.stepName === GENERATE_SCRIPTS_STEPS.SETUP || data.stepName === GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS,
+          job.stepName === GENERATE_SCRIPTS_STEPS.SETUP || job.stepName === GENERATE_SCRIPTS_STEPS.GENERATE_SCRIPTS,
         isCompleted:
-          data.stepName === GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS ||
-          data.stepName === GENERATE_SCRIPTS_STEPS.FINISH,
+          job.stepName === GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS ||
+          job.stepName === GENERATE_SCRIPTS_STEPS.FINISH,
       },
       buildOutcomes: () => ["Generated scripts for the property."],
     }),
@@ -53,8 +55,8 @@ export default function ScriptingProgressPage({ params }: { params: Promise<{ jo
         steps: [
           { name: GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS, label: "Adding the scripts to the property groups" },
         ],
-        isActive: data.stepName === GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS,
-        isCompleted: data.stepName === GENERATE_SCRIPTS_STEPS.FINISH,
+        isActive: job.stepName === GENERATE_SCRIPTS_STEPS.UPDATE_POST_MEDIA_GROUPS,
+        isCompleted: job.stepName === GENERATE_SCRIPTS_STEPS.FINISH,
       },
       buildOutcomes: () => ["Saved the scripts to the property groups."],
     }),
@@ -77,7 +79,7 @@ export default function ScriptingProgressPage({ params }: { params: Promise<{ jo
 
       <div className="w-full space-y-2">
         {milestones.map((milestone) => (
-          <MilestoneCard milestone={milestone} key={milestone.id} currentStep={data.stepName || ""} />
+          <MilestoneCard milestone={milestone} key={milestone.id} currentStep={job.stepName || ""} />
         ))}
       </div>
 
@@ -100,7 +102,7 @@ export default function ScriptingProgressPage({ params }: { params: Promise<{ jo
             variant="primary"
             size="xl"
             className="w-full z-10"
-            onClick={() => router.push(`/processing/prep-results/${data.postId}`)}
+            onClick={() => router.push(`/processing/prep-results/${job.entityId}`)}
           >
             View The Results
           </Button>

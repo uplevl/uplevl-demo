@@ -102,9 +102,6 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("error", handleError);
 
-    // Set default volume
-    audio.volume = 0.7;
-
     // Force load the audio
     audio.load();
 
@@ -128,6 +125,7 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
       audio.pause();
       setIsPlaying(false);
     } else {
+      audio.volume = 0.4;
       audio.play();
       setIsPlaying(true);
     }
@@ -222,7 +220,7 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-2 shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-lg p-2 shadow-sm shadow-exploration1 bg-gradient-to-b from-gray-100 to-gray-200">
       <audio ref={audioRef} src={audioUrl} preload="metadata" crossOrigin="anonymous">
         <track kind="captions" srcLang="en" label="English" />
       </audio>
@@ -240,7 +238,7 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
         </Button>
 
         {/* Progress Section */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 gap-2 justify-end pt-1 flex flex-col ">
           {/* Time Display */}
           <div className="flex justify-between items-center text-xs text-gray-500">
             <span>{formatTime(currentTime)}</span>
@@ -250,7 +248,7 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
           {/* Progress Bar */}
           <button
             type="button"
-            className="relative h-2 bg-gray-200 rounded-full cursor-pointer group w-full"
+            className="relative h-2 bg-gray-400 border-0 border-white/75 border-b rounded-full cursor-pointer group w-full"
             onClick={handleSeek}
             onKeyDown={handleKeyDown}
             aria-label={`Audio progress: ${formatTime(currentTime)} of ${formatTime(duration)}`}

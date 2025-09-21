@@ -1,6 +1,6 @@
 import { generateObject, generateText } from "ai";
 import pMap from "p-map";
-import z from "zod";
+import * as z from "zod";
 import { THUMBNAIL_SIZES_CONFIG } from "@/constants/image";
 import { LLM_MODELS } from "@/constants/llm";
 import { addEntry, getEntry } from "@/lib/cache";

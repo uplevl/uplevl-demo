@@ -1,27 +1,35 @@
 "use client";
 
+import { CogIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-
 import Button from "@/components/button";
 import Logo from "@/components/logo";
-import PropertyGroupCard from "@/components/property-group-card";
+import PropertyDetails from "@/components/property-details";
+import PropertyGroups from "@/components/property-groups";
 import Spinner from "@/components/spinner";
 import { Typography } from "@/components/typography";
 import View from "@/components/view";
 import { GENERATE_SCRIPTS_EVENT } from "@/constants/events";
-import usePostGroups from "@/hooks/use-post-groups";
 import useTriggerInngestEvent from "@/hooks/use-trigger-inngest-event";
-import { formatPrice } from "@/lib/utils";
-import type { Post } from "@/repositories/post.repository";
-import type { PostMediaGroup } from "@/repositories/post-media-group.repository";
+import PostProvider, { useGroups, useIsLoading, usePost } from "@/providers/post-provider";
 
 export default function PostResultsPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = use(params);
+
+  return (
+    <PostProvider postId={postId}>
+      <PostResultsPageContent />
+    </PostProvider>
+  );
+}
+
+function PostResultsPageContent() {
   const router = useRouter();
   const triggerInngestEvent = useTriggerInngestEvent();
-
-  const { data, isLoading } = usePostGroups(postId);
+  const isLoading = useIsLoading();
+  const post = usePost();
+  const groups = useGroups();
 
   if (isLoading) {
     return (
@@ -32,7 +40,7 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
     );
   }
 
-  if (!data) {
+  if (!post) {
     return (
       <View className="items-center gap-8">
         <Logo />
@@ -41,22 +49,18 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
     );
   }
 
-  if (data.error) {
-    return (
-      <View className="items-center gap-8">
-        <Logo />
-        <Typography>Error: {data.error}</Typography>
-      </View>
-    );
-  }
+  const numberOfGroups = groups.length;
+  const numberOfGeneratedVoiceOver = groups.filter((group) => group.audioUrl).length;
+  const hasAllVoiceOverGenerated = numberOfGeneratedVoiceOver === numberOfGroups;
 
   let buttonLabel = "Done";
-  if (!data.data.post.hasVideoReels) buttonLabel = "Generate Video Reels";
-  if (!data.data.post.hasScripts) buttonLabel = "Generate Voice Over Scripts";
+  if (post.hasAutoReels && hasAllVoiceOverGenerated) buttonLabel = "Generate Social Media Reels";
+  if (!post.hasAutoReels && hasAllVoiceOverGenerated) buttonLabel = "Generate Video Clips";
+  if (!post.hasScripts) buttonLabel = "Generate Voice Over Scripts";
 
   async function handleNextStep() {
-    if (data?.data.post.hasScripts === false) {
-      const { eventId } = await triggerInngestEvent(GENERATE_SCRIPTS_EVENT, { postId });
+    if (post?.hasScripts === false) {
+      const { eventId } = await triggerInngestEvent(GENERATE_SCRIPTS_EVENT, { postId: post.id });
       router.push(`/processing/progress/scripting/${eventId}`);
     }
   }
@@ -67,66 +71,12 @@ export default function PostResultsPage({ params }: { params: Promise<{ postId: 
       <Typography size="xl" weight="semibold">
         Property Details
       </Typography>
-      <PropertyGroups groups={data.data.groups} />
-      <PropertyDetails post={data.data.post} />
+      <PropertyGroups />
+      <PropertyDetails />
       <Button variant="primary" size="xl" className="w-full" onClick={handleNextStep}>
+        <CogIcon className="size-4" />
         {buttonLabel}
       </Button>
     </View>
-  );
-}
-
-interface PropertyGroupsProps {
-  groups: PostMediaGroup[];
-}
-
-function PropertyGroups({ groups }: PropertyGroupsProps) {
-  return (
-    <div className="flex flex-col gap-4 w-full ">
-      {groups.map((group) => (
-        <PropertyGroupCard key={group.id} group={group} />
-      ))}
-    </div>
-  );
-}
-
-interface PropertyDetailsProps {
-  post: Post;
-}
-
-function PropertyDetails({ post }: PropertyDetailsProps) {
-  return (
-    <ul className="flex flex-col gap-1 w-full border border-brand-yellow/20 bg-gradient-to-b from-brand-yellow/10 to-white rounded-lg p-4 pt-3 shadow-exploration1">
-      <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
-          Price:
-        </Typography>
-        <Typography as="dd">{formatPrice(post.propertyStats?.price ?? 0)}</Typography>
-      </li>
-      <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
-          Beds:
-        </Typography>
-        <Typography as="dd">{post.propertyStats?.bedrooms}</Typography>
-      </li>
-      <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
-          Baths:
-        </Typography>
-        <Typography as="dd">{post.propertyStats?.bathrooms}</Typography>
-      </li>
-      <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
-          Sqft:
-        </Typography>
-        <Typography as="dd">{post.propertyStats?.squareFeet}</Typography>
-      </li>
-      <li className="flex items-center gap-4">
-        <Typography as="dt" weight="semibold">
-          Address:
-        </Typography>
-        <Typography as="dd">{post.location}</Typography>
-      </li>
-    </ul>
   );
 }

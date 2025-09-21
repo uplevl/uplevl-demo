@@ -22,3 +22,15 @@ export const GENERATE_SCRIPTS_STEPS = {
 } as const;
 
 export type GenerateScriptsStep = (typeof GENERATE_SCRIPTS_STEPS)[keyof typeof GENERATE_SCRIPTS_STEPS];
+
+export const GENERATE_AUTO_REEL_EVENT = "post/generate.auto-reel" as const;
+export const GENERATE_AUTO_REEL_STEPS = {
+  SETUP: "setup",
+  START_GENERATING: "start-generating",
+  GET_VIDEO_STATUS: "get-video-status",
+  GET_VIDEO_REEL: "get-video-reel",
+  UPLOAD_VIDEO: "upload-video",
+  FINISH: "finish",
+} as const;
+
+export type GenerateAutoReelStep = (typeof GENERATE_AUTO_REEL_STEPS)[keyof typeof GENERATE_AUTO_REEL_STEPS];

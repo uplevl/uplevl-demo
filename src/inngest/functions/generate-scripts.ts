@@ -1,4 +1,5 @@
-import z from "zod";
+import * as z from "zod";
+
 import { GENERATE_SCRIPTS_EVENT, GENERATE_SCRIPTS_STEPS } from "@/constants/events";
 import { inngest } from "@/inngest/client";
 import * as JobService from "@/services/job.service";
@@ -27,7 +28,7 @@ export default inngest.createFunction(
         id: eventId,
         eventName: eventName,
         stepName: GENERATE_SCRIPTS_STEPS.SETUP,
-        postId: postId,
+        entityId: postId,
       });
 
       return { jobId, postId };

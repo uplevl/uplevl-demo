@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import * as Sentry from "@sentry/nextjs";
 import { Hono } from "hono";
-import z from "zod";
+import * as z from "zod";
 
 import * as PostService from "@/services/post.service";
 import * as PostMediaGroupService from "@/services/post-media-group.service";
@@ -26,6 +26,7 @@ export const postRoute = new Hono()
     }
   })
 
+  // GET /posts/groups/:groupId
   .get("/groups/:groupId", zValidator("param", z.object({ groupId: z.string() })), async (c) => {
     try {
       const { groupId } = c.req.valid("param");

@@ -1,4 +1,5 @@
-import z from "zod";
+import * as z from "zod";
+
 import { PARSE_ZILLOW_PROPERTY_EVENT, PARSE_ZILLOW_PROPERTY_STEPS } from "@/constants/events";
 import type { InsertPostMedia } from "@/database/schema";
 import { inngest } from "@/inngest/client";
@@ -32,7 +33,7 @@ export default inngest.createFunction(
         id: eventId,
         eventName: eventName,
         stepName: PARSE_ZILLOW_PROPERTY_STEPS.SETUP,
-        postId: post.id,
+        entityId: post.id,
       });
 
       return { jobId, url, postId: post.id };
