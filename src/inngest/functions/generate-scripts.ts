@@ -1,4 +1,4 @@
-import * as z from "zod";
+import { z } from "zod";
 
 import { GENERATE_SCRIPTS_EVENT, GENERATE_SCRIPTS_STEPS } from "@/constants/events";
 import { inngest } from "@/inngest/client";

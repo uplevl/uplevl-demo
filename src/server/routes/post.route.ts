@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import * as Sentry from "@sentry/nextjs";
 import { Hono } from "hono";
-import * as z from "zod";
+import { z } from "zod";
 
 import * as PostService from "@/services/post.service";
 import * as PostMediaGroupService from "@/services/post-media-group.service";

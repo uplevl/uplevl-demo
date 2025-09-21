@@ -1,6 +1,6 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, generateText } from "ai";
-import * as z from "zod";
+import { z } from "zod";
 import type { GeneratedTweet, PullRequestData, TweetDecision } from "./types";
 import { extractHashtags, validateTweet } from "./utils";
 

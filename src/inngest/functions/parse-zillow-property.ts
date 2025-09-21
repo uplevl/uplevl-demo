@@ -1,4 +1,4 @@
-import * as z from "zod";
+import { z } from "zod";
 
 import { PARSE_ZILLOW_PROPERTY_EVENT, PARSE_ZILLOW_PROPERTY_STEPS } from "@/constants/events";
 import type { InsertPostMedia } from "@/database/schema";

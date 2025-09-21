@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import * as z from "zod";
+import { z } from "zod";
 import { GENERATE_AUTO_REEL_EVENT, GENERATE_AUTO_REEL_STEPS } from "@/constants/events";
 import { inngest } from "@/inngest/client";
 import { fetchVideo } from "@/lib/helpers";
