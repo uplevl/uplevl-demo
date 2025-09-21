@@ -121,8 +121,8 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
         isCompleted: job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
       },
       buildOutcomes: () => [
-        post?.groups.length && post.groups.length > 0
-          ? `Identified ${post.groups.length} logical groups of photos.`
+        (post?.groups?.length ?? 0) > 0
+          ? `Identified ${post?.groups?.length ?? 0} logical groups of photos.`
           : "No logical groups of photos identified for this property",
       ],
     }),
