@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { autoReelClient } from "@/lib/auto-reel";
 import { bucket } from "@/lib/supabase";
 
@@ -58,6 +59,7 @@ export async function createVideo(inputs: CreateVideoInputs) {
 
     return data;
   } catch (error) {
+    Sentry.captureException(error);
     console.error(error);
     throw error;
   }
@@ -78,6 +80,7 @@ export async function getReel(uuid: string) {
     const { data } = await autoReelClient.get<GetVideoResponse>(`/get_video/${uuid}`);
     return data;
   } catch (error) {
+    Sentry.captureException(error);
     console.error(error);
     throw error;
   }
@@ -93,6 +96,7 @@ export async function uploadVideo(userId: string, postId: string, file: File) {
     });
 
     if (error) {
+      Sentry.captureException(error);
       console.error("Error uploading video", error);
       return null;
     }
@@ -101,6 +105,7 @@ export async function uploadVideo(userId: string, postId: string, file: File) {
 
     return videoUrl;
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Error in uploadVideo:", error);
     return null;
   }

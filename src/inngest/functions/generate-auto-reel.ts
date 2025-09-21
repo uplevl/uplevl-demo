@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import * as z from "zod";
 import { GENERATE_AUTO_REEL_EVENT, GENERATE_AUTO_REEL_STEPS } from "@/constants/events";
 import { inngest } from "@/inngest/client";
@@ -54,8 +55,10 @@ export default inngest.createFunction(
     }
 
     if (videoStatus === "error") {
-      await JobService.update(jobId, { status: "failed", error: "Failed to generate auto reel" });
-      throw new Error("Failed to generate auto reel");
+      const error = new Error("Failed to generate auto reel");
+      Sentry.captureException(error);
+      await JobService.update(jobId, { status: "failed", error: error.message });
+      throw error;
     }
 
     const reel = await step.run(GENERATE_AUTO_REEL_STEPS.GET_VIDEO_REEL, async () => {
@@ -69,8 +72,10 @@ export default inngest.createFunction(
       const uploadedVideo = await VideoService.uploadVideo("usr_test1234", group.postId, file);
 
       if (!uploadedVideo) {
-        await JobService.update(jobId, { status: "failed", error: "Failed to upload video" });
-        throw new Error("Failed to upload video");
+        const error = new Error("Failed to upload video");
+        Sentry.captureException(error);
+        await JobService.update(jobId, { status: "failed", error: error.message });
+        throw error;
       }
 
       await PostMediaGroupService.update(groupId, { autoReelUrl: uploadedVideo });

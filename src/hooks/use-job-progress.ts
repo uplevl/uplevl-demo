@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import type { Post } from "@/repositories/post.repository";
@@ -12,8 +13,13 @@ export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string,
   const { data } = useQuery({
     queryKey: ["processing", jobId],
     queryFn: async () => {
-      const result = await api.jobs[":id"].$get({ param: { id: jobId, entityType } });
-      return result.json();
+      try {
+        const result = await api.jobs[":id"].$get({ param: { id: jobId, entityType } });
+        return result.json();
+      } catch (error) {
+        Sentry.captureException(error);
+        throw error;
+      }
     },
     refetchInterval: 1000,
     enabled,

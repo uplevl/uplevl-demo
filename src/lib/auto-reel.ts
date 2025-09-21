@@ -6,6 +6,6 @@ export const autoReelClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Authorization: `Bearer ${env.AUTO_REEL_API_KEY}`,
+    Authorization: env.AUTO_REEL_API_KEY,
   },
 });

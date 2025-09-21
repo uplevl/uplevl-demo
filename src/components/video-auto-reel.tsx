@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { CogIcon, LoaderCircleIcon } from "lucide-react";
 
@@ -27,17 +28,23 @@ export default function VideoAutoReel({ groupId }: VideoAutoReelProps) {
     queryKey: ["auto-reel-job", jobId],
     enabled: jobId !== null && jobStatus !== "ready" && jobStatus !== "failed",
     queryFn: async () => {
-      const response = await api.jobs[":id"].$get({ param: { id: jobId ?? "" } });
-      const data = await response.json();
+      try {
+        const response = await api.jobs[":id"].$get({ param: { id: jobId ?? "" } });
+        const data = await response.json();
 
-      if (!data.job) return;
+        if (!data.job) return;
 
-      setJobStatus(data.job.status);
-      if (data.job.status === "ready") {
-        refetchPostGroups();
+        setJobStatus(data.job.status);
+        if (data.job.status === "ready") {
+          refetchPostGroups();
+        }
+
+        return data;
+      } catch (error) {
+        Sentry.captureException(error);
+        console.error("Error fetching auto reel job", error);
+        return null;
       }
-
-      return data;
     },
     refetchInterval: 1000,
   });
@@ -45,8 +52,13 @@ export default function VideoAutoReel({ groupId }: VideoAutoReelProps) {
   const isLoading = jobStatus === "running";
 
   async function handleGenerateAutoReel() {
-    const { eventId } = await triggerInngestEvent(GENERATE_AUTO_REEL_EVENT, { groupId });
-    setJobId(eventId);
+    try {
+      const { eventId } = await triggerInngestEvent(GENERATE_AUTO_REEL_EVENT, { groupId });
+      setJobId(eventId);
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error("Error generating auto reel", error);
+    }
   }
 
   return (
