@@ -8,7 +8,7 @@ export const jobRoute = new Hono()
 
   // GET /jobs/:id
   .get(
-    "/:id",
+    "/:id/:entityType",
     zValidator("param", z.object({ id: z.string(), entityType: z.enum(["post", "group"]).optional() })),
     async (c) => {
       const { id, entityType } = c.req.valid("param");

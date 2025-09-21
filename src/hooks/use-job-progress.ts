@@ -14,7 +14,7 @@ export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string,
     queryKey: ["processing", jobId],
     queryFn: async () => {
       try {
-        const result = await api.jobs[":id"].$get({ param: { id: jobId, entityType } });
+        const result = await api.jobs[":id"][":entityType"].$get({ param: { id: jobId, entityType } });
         return result.json();
       } catch (error) {
         Sentry.captureException(error);
