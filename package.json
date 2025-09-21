@@ -76,7 +76,7 @@
     "typescript": "5.9.2"
   },
   "lint-staged": {
-    "**/*": [
+    "**/*.{ts,tsx,js,jsx,json,css,md}": [
       "biome lint --fix",
       "biome format --write"
     ]
