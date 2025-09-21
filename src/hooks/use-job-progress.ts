@@ -11,7 +11,7 @@ export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string,
   const api = useApi();
 
   const { data } = useQuery({
-    queryKey: ["processing", jobId],
+    queryKey: ["processing", jobId, entityType],
     queryFn: async () => {
       try {
         const result = await api.jobs[":id"][":entityType"].$get({ param: { id: jobId, entityType } });
