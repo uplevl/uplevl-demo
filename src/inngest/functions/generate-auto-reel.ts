@@ -33,6 +33,16 @@ export default inngest.createFunction(
         entityId: groupId,
       });
 
+      // Validate group media
+      const group = await PostMediaGroupService.getById(groupId);
+      const images = Array.isArray(group.media) ? group.media.map((m) => m.mediaUrl).filter(Boolean) : [];
+      if (images.length === 0) {
+        const error = new Error(`generate-auto-reel: Group ${groupId} has no images`);
+        Sentry.captureException(error);
+        await JobService.update(jobId, { status: "failed", error: error.message });
+        throw error;
+      }
+
       return { jobId, groupId };
     });
 
