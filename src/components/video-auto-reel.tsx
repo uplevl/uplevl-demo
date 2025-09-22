@@ -29,7 +29,7 @@ export default function VideoAutoReel({ groupId }: VideoAutoReelProps) {
     enabled: jobId !== null && jobStatus !== "ready" && jobStatus !== "failed",
     queryFn: async () => {
       try {
-        const response = await api.jobs[":id"].$get({ param: { id: jobId ?? "" } });
+        const response = await api.jobs[":id"][":entityType"].$get({ param: { id: jobId ?? "", entityType: "group" } });
         const data = await response.json();
 
         if (!data.job) return;
