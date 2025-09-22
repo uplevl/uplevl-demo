@@ -33,18 +33,27 @@ export function buildMilestones({ milestone, buildOutcomes }: BuildMilestonesPro
 }
 
 /**
- * Sanitizes a URL by removing query parameters to prevent exposure of sensitive tokens
+ * Sanitizes a URL by removing query parameters and fragments to prevent exposure of sensitive tokens
  * @param url - The URL to sanitize
- * @returns The URL without query parameters
+ * @returns The URL without query parameters and fragments
  */
 export function sanitizeUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     urlObj.search = "";
+    urlObj.hash = "";
     return urlObj.toString();
   } catch {
-    // If URL parsing fails, just remove everything after '?' as fallback
+    // If URL parsing fails, remove everything after '?' or '#' as fallback
     const questionMarkIndex = url.indexOf("?");
-    return questionMarkIndex !== -1 ? url.substring(0, questionMarkIndex) : url;
+    const hashIndex = url.indexOf("#");
+
+    // Find the earliest occurrence of either '?' or '#'
+    const firstSpecialCharIndex = Math.min(
+      questionMarkIndex === -1 ? Number.MAX_SAFE_INTEGER : questionMarkIndex,
+      hashIndex === -1 ? Number.MAX_SAFE_INTEGER : hashIndex,
+    );
+
+    return firstSpecialCharIndex === Number.MAX_SAFE_INTEGER ? url : url.substring(0, firstSpecialCharIndex);
   }
 }
