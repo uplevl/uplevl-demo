@@ -1,8 +1,10 @@
-import z from "zod";
+import { z } from "zod";
+
 import { PARSE_ZILLOW_PROPERTY_EVENT, PARSE_ZILLOW_PROPERTY_STEPS } from "@/constants/events";
 import type { InsertPostMedia } from "@/database/schema";
 import { inngest } from "@/inngest/client";
 import { fetchImage } from "@/lib/helpers";
+import { sanitizeUrl } from "@/lib/utils";
 import * as ImageService from "@/services/image.service";
 import * as JobService from "@/services/job.service";
 import * as PostService from "@/services/post.service";
@@ -32,7 +34,7 @@ export default inngest.createFunction(
         id: eventId,
         eventName: eventName,
         stepName: PARSE_ZILLOW_PROPERTY_STEPS.SETUP,
-        postId: post.id,
+        entityId: post.id,
       });
 
       return { jobId, url, postId: post.id };
@@ -112,7 +114,8 @@ export default inngest.createFunction(
             const mediaUrl = uploadedImages.find((item) => item.originalUrl === image.url)?.url ?? "";
 
             if (!mediaUrl) {
-              console.error("Media URL not found for image", image.url);
+              const sanitizedUrl = sanitizeUrl(image.url);
+              console.error("Media URL not found for image", sanitizedUrl);
               return;
             }
 

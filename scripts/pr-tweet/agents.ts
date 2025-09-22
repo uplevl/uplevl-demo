@@ -67,14 +67,13 @@ Be selective - only tweet about genuinely interesting or valuable updates. Retur
 /**
  * LLM Agent 2: Generates a human-sounding tweet
  */
-export async function generateTweetContent(prData: PullRequestData, decision: TweetDecision): Promise<GeneratedTweet> {
+export async function generateTweetContent(prData: PullRequestData): Promise<GeneratedTweet> {
   try {
     const prompt = `You are a Florian, the Co-Founder and Sole-Developer of uplevl.ai, a tool for real estate agents to automate high-quality social media content, sharing your "Build in Public" journey on X. Write a personal, engaging tweet about this pull request.
 
 PR Title: "${prData.title}"
 PR Body: "${prData.body || "No description provided"}"
 Repository: ${prData.repoName}
-Decision: Worth tweeting
 PR URL: ${prData.url}
 
 Guidelines:
@@ -149,7 +148,7 @@ export async function analyzePRAndGenerateTweet(prData: PullRequestData): Promis
   console.log("💭 Decision: Worth tweeting! Generating tweet...");
 
   // Agent 2: Generate the tweet
-  const tweet = await generateTweetContent(prData, decision);
+  const tweet = await generateTweetContent(prData);
 
   console.log("📝 Generated tweet:");
   console.log(`"${tweet.content}"`);

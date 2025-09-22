@@ -24,6 +24,8 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: z.string().min(1),
 
     ELEVENLABS_API_KEY: z.string().min(1),
+
+    AUTO_REEL_API_KEY: z.string().min(1),
   },
 
   client: {
@@ -54,6 +56,7 @@ export const env = createEnv({
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
+    AUTO_REEL_API_KEY: process.env.AUTO_REEL_API_KEY,
   },
 
   emptyStringAsUndefined: true,

@@ -13,6 +13,7 @@ import View from "@/components/view";
 import { PARSE_ZILLOW_PROPERTY_STEPS } from "@/constants/events";
 import useJobProgress from "@/hooks/use-job-progress";
 import { buildMilestones, formatPrice } from "@/lib/utils";
+import type { Post } from "@/repositories/post.repository";
 import type { PropertyStats } from "@/types/post";
 import type { Milestone } from "@/types/progress";
 
@@ -29,13 +30,15 @@ function getPropertyStatsSummary(propertyStats: PropertyStats): string {
 export default function ScrapingProcessingPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
   const router = useRouter();
-  const data = useJobProgress(jobId);
+  const data = useJobProgress<Post>(jobId, "post");
 
-  const isDone = data?.status === "ready";
+  const isDone = data?.job?.status === "ready";
 
-  if (!data) {
+  if (!data || !data.job) {
     return <Spinner />;
   }
+
+  const { job, entity: post } = data;
 
   const milestones: Milestone[] = [
     buildMilestones({
@@ -50,14 +53,14 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
           { name: PARSE_ZILLOW_PROPERTY_STEPS.RETRIEVE_PROPERTY_DATA, label: "Extracting property details" },
         ],
         isActive:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.SETUP ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.START_SCRAPING ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.RETRIEVE_PROPERTY_DATA,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.SETUP ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.START_SCRAPING ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.RETRIEVE_PROPERTY_DATA,
         isCompleted:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
       },
       buildOutcomes: () => ["Collected property details from Zillow."],
     }),
@@ -71,17 +74,17 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
           { name: PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA, label: "Analyzing property features and details" },
         ],
         isActive:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS,
         isCompleted:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
       },
       buildOutcomes: () =>
         [
-          data?.post?.propertyStats ? formatPrice(data.post.propertyStats.price) : null,
-          data?.post?.location,
-          data?.post?.propertyStats ? getPropertyStatsSummary(data?.post?.propertyStats) : null,
+          post?.propertyStats ? formatPrice(post.propertyStats.price) : null,
+          post?.location,
+          post?.propertyStats ? getPropertyStatsSummary(post?.propertyStats) : null,
         ].filter(Boolean) as string[],
     }),
     buildMilestones({
@@ -94,11 +97,11 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
           { name: PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS, label: "Identifying rooms, features, and details" },
         ],
         isActive:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PROPERTY_DATA ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.ANALYZE_PHOTOS,
         isCompleted:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
       },
       buildOutcomes: () => ["Looked at each photo and noted down a short description."],
     }),
@@ -113,13 +116,13 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
           { name: PARSE_ZILLOW_PROPERTY_STEPS.STORE_GROUPS, label: "Storing grouped photos in the database" },
         ],
         isActive:
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
-          data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.STORE_GROUPS,
-        isCompleted: data.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.GROUP_PHOTOS ||
+          job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.STORE_GROUPS,
+        isCompleted: job.stepName === PARSE_ZILLOW_PROPERTY_STEPS.FINISH,
       },
       buildOutcomes: () => [
-        data?.post?.groups.length && data.post.groups.length > 0
-          ? `Identified ${data.post.groups.length} logical groups of photos.`
+        (post?.groups?.length ?? 0) > 0
+          ? `Identified ${post?.groups?.length ?? 0} logical groups of photos.`
           : "No logical groups of photos identified for this property",
       ],
     }),
@@ -142,7 +145,7 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
 
       <div className="w-full space-y-2">
         {milestones.map((milestone) => (
-          <MilestoneCard milestone={milestone} key={milestone.id} currentStep={data.stepName || ""} />
+          <MilestoneCard milestone={milestone} key={milestone.id} currentStep={job.stepName || ""} />
         ))}
       </div>
 
@@ -165,7 +168,7 @@ export default function ScrapingProcessingPage({ params }: { params: Promise<{ j
             variant="primary"
             size="xl"
             className="w-full z-10"
-            onClick={() => router.push(`/processing/prep-results/${data.postId}`)}
+            onClick={() => router.push(`/processing/prep-results/${post?.id}`)}
           >
             View The Results
           </Button>

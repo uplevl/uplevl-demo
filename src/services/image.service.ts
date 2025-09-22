@@ -1,12 +1,13 @@
 import { generateObject, generateText } from "ai";
 import pMap from "p-map";
-import z from "zod";
+import { z } from "zod";
 import { THUMBNAIL_SIZES_CONFIG } from "@/constants/image";
 import { LLM_MODELS } from "@/constants/llm";
 import { addEntry, getEntry } from "@/lib/cache";
 import { openRouter } from "@/lib/open-router";
 import { bucket } from "@/lib/supabase";
 import { generateResponsiveThumbnails } from "@/lib/thumbnail";
+import { sanitizeUrl } from "@/lib/utils";
 import type {
   AnalyzedImage,
   ImageGroupWithDescribedImages,
@@ -227,7 +228,8 @@ function combineGroupsWithDescribedImages(
         const foundDescription = descriptionLookup.get(url);
 
         if (!foundDescription) {
-          console.warn(`⚠️  No description found for url: ${url}`);
+          const sanitizedUrl = sanitizeUrl(url);
+          console.warn(`⚠️  No description found for url: ${sanitizedUrl}`);
           console.warn("Available descriptions:", Array.from(descriptionLookup.keys()));
           return null;
         }

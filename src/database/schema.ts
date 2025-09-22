@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
-import type { GenerateScriptsStep, ParseZillowPropertyStep } from "@/constants/events";
+import type { GenerateAutoReelStep, GenerateScriptsStep, ParseZillowPropertyStep } from "@/constants/events";
 import { createdAt, id, updatedAt } from "@/database/schema-helpers";
 import type { PropertyStats } from "@/types/post";
 
@@ -19,6 +19,8 @@ export const PostTable = pgTable("posts", {
   propertyContext: text("property_context"),
 
   hasScripts: boolean("has_scripts").default(false),
+  hasVoiceOver: boolean("has_voice_over").default(false),
+  hasAutoReels: boolean("has_auto_reels").default(false),
   hasVideoReels: boolean("has_video_reels").default(false),
   isPublished: boolean("is_published").default(false),
 
@@ -54,6 +56,8 @@ export const PostMediaGroupTable = pgTable("post_media_groups", {
   groupName: text("group_name").notNull(),
   script: text("script"),
   audioUrl: text("audio_url"),
+  autoReelUrl: text("auto_reel_url"),
+  reelUrl: text("reel_url"),
 
   isEstablishingShot: boolean("is_establishing_shot").default(false),
 
@@ -63,14 +67,14 @@ export const PostMediaGroupTable = pgTable("post_media_groups", {
 
 export const JobTable = pgTable("jobs", {
   id: varchar("id").primaryKey(), // Using varchar instead of uuid because we're using inngest ID as the primary key
-  postId: uuid("post_id").references(() => PostTable.id, { onDelete: "cascade" }),
+  entityId: uuid("entity_id").notNull(),
 
   status: text("status", {
     enum: ["running", "ready", "failed"],
   }).default("running"),
   error: text("error"),
   eventName: text("event_name").notNull(),
-  stepName: text("step_name").$type<ParseZillowPropertyStep | GenerateScriptsStep>(),
+  stepName: text("step_name").$type<ParseZillowPropertyStep | GenerateScriptsStep | GenerateAutoReelStep>(),
 
   createdAt,
   updatedAt,
@@ -81,7 +85,6 @@ export const JobTable = pgTable("jobs", {
 export const postRelations = relations(PostTable, ({ many }) => ({
   media: many(PostMediaTable),
   groups: many(PostMediaGroupTable),
-  jobs: many(JobTable),
 }));
 
 export const postMediaRelations = relations(PostMediaTable, ({ one }) => ({
@@ -101,13 +104,6 @@ export const postMediaGroupRelations = relations(PostMediaGroupTable, ({ one, ma
     references: [PostTable.id],
   }),
   media: many(PostMediaTable),
-}));
-
-export const jobRelations = relations(JobTable, ({ one }) => ({
-  post: one(PostTable, {
-    fields: [JobTable.postId],
-    references: [PostTable.id],
-  }),
 }));
 
 // -- Types --

@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { AUDIO_OUTPUT_FORMAT, MODEL_ID, VOICE_MODEL_IDS } from "@/constants/voice";
+import { AUDIO_OUTPUT_FORMAT, DEFAULT_VOICE_ID, MODEL_ID } from "@/constants/voice";
 import { elevenlabs } from "@/lib/elevenlabs";
 import { bucket } from "@/lib/supabase";
 
@@ -8,9 +8,9 @@ function getStoragePath(userId: string, postId: string) {
   return `${userId}/post_${postId}/uploads/voice-overs`;
 }
 
-export async function generateVoiceOver(script: string) {
+export async function generateVoiceOver(script: string, voiceId: string = DEFAULT_VOICE_ID) {
   try {
-    const audioStream = await elevenlabs.textToSpeech.convert(VOICE_MODEL_IDS.ARABELLA, {
+    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
       text: script,
       modelId: MODEL_ID,
       outputFormat: AUDIO_OUTPUT_FORMAT,

@@ -6,6 +6,16 @@ import { type InsertPost, PostTable, type UpdatePost } from "@/database/schema";
 export async function getById(postId: string) {
   return await db.query.PostTable.findFirst({
     where: (post, { eq }) => eq(post.id, postId),
+    with: {
+      groups: {
+        orderBy: (g, { desc }) => desc(g.isEstablishingShot),
+        with: {
+          media: {
+            orderBy: (m, { asc }) => asc(m.createdAt),
+          },
+        },
+      },
+    },
   });
 }
 
