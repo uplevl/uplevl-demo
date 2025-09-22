@@ -2,7 +2,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, generateText } from "ai";
 import { z } from "zod";
 import type { GeneratedTweet, PullRequestData, TweetDecision } from "./types";
-import { extractHashtags, validateTweet } from "./utils";
+import { extractHashtags, logTweetAnalysis, validateTweet } from "./utils";
 
 // Initialize OpenRouter with environment variable
 const openRouter = createOpenRouter({
@@ -65,36 +65,40 @@ Be selective - only tweet about genuinely interesting or valuable updates. Retur
 }
 
 /**
- * LLM Agent 2: Generates a human-sounding tweet
+ * LLM Agent 2: Generates a human-sounding tweet with retry logic for character limits
  */
 export async function generateTweetContent(prData: PullRequestData): Promise<GeneratedTweet> {
-  try {
-    const prompt = `You are a Florian, the Co-Founder and Sole-Developer of uplevl.ai, a tool for real estate agents to automate high-quality social media content, sharing your "Build in Public" journey on X. Write a personal, engaging tweet about this pull request.
+  const maxRetries = 3;
+  let lastError: string | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const prompt = `You are Florian, the Co-Founder and Sole-Developer of uplevl.ai, a tool for real estate agents to automate high-quality social media content. You're sharing your "Build in Public" journey on X. Write a personal, engaging tweet about this pull request.
 
 PR Title: "${prData.title}"
 PR Body: "${prData.body || "No description provided"}"
 Repository: ${prData.repoName}
 PR URL: ${prData.url}
 
+CRITICAL REQUIREMENTS:
+- The tweet MUST be under 280 characters (aim for 250-270 to be safe)
+- Use proper line breaks (\\n) between paragraphs for natural formatting
+- Each paragraph should be short and punchy
+
 Guidelines:
-- Write the tweet *as if Florian is posting it personally*
-- Sound personal and authentic, like you're excited to share this
-- Feel free to mention why this update matters, how it felt, or what's coming next.
-- Keep it under 280 characters
-- Structure the tweet in short paragraphs with line breaks to mimic a real person reflecting on their progress.
-- Include relevant emojis if they feel natural (don't overdo it)
-- Conclude with a strong statement, insight, or call to curiosity (e.g., “More soon.” or “Loving the momentum lately.”)
-- Always include the hashtag #buildinpublic in a new paragraph.
-- Add special hashtags only if they fit the vibe of the tweet.
-- Don't be overly promotional or salesy
-- Focus on the value or interesting aspect
-- You can include the PR link if space allows
-- Mention uplevl.ai naturally if appropriate; X will convert this to a link, so we can generate some traffic.
+- Write as Florian posting personally - sound excited and authentic
+- Structure with short paragraphs separated by line breaks
+- Include relevant emojis naturally (don't overdo it)
+- Always end with #buildinpublic on its own line
+- Add other hashtags only if they fit naturally and space allows
+- Focus on the value or interesting technical aspect
+- Include uplevl.ai mention if appropriate (X converts to link)
+- Avoid being promotional or salesy
 
-Examples of good tweet styles:
-"Just shipped a new feature that lets users... 🚀
+Examples of good formatting:
+"Just shipped a new feature that lets users customize their video thumbnails 🎯
 
-The trickiest part was figuring out how to... 
+The trickiest part was handling all the different aspect ratios.
 
 #buildinpublic"
 
@@ -102,30 +106,51 @@ The trickiest part was figuring out how to...
 
 Improved loading times by 40% with some clever caching tricks.
 
-Sometimes the best improvements are invisible to users but make everything feel snappier."
+Sometimes the best improvements are invisible to users.
 
-Write a tweet that matches this style and energy.`;
+#buildinpublic"
 
-    const { text } = await generateText({
-      model: openRouter("anthropic/claude-sonnet-4"),
-      prompt,
-      temperature: 0.7,
-    });
+${attempt > 1 ? `\nPREVIOUS ATTEMPT FAILED: ${lastError}\nMake this tweet shorter and more concise.\n` : ""}
 
-    const validation = validateTweet(text);
-    if (!validation.isValid) {
-      throw new Error(`Generated tweet failed validation: ${validation.reason}`);
+Write a tweet that's under 280 characters with proper line breaks between paragraphs.`;
+
+      const { text } = await generateText({
+        model: openRouter("anthropic/claude-sonnet-4"),
+        prompt,
+        temperature: 0.7,
+      });
+
+      const cleanedText = text.trim();
+      const validation = validateTweet(cleanedText);
+
+      if (!validation.isValid) {
+        lastError = validation.reason || "Validation failed";
+        console.log(`❌ Attempt ${attempt}/${maxRetries} failed: ${lastError}`);
+        console.log(`📝 Generated content (${cleanedText.length} chars): "${cleanedText}"`);
+
+        if (attempt === maxRetries) {
+          throw new Error(`Failed to generate valid tweet after ${maxRetries} attempts. Last error: ${lastError}`);
+        }
+        continue;
+      }
+
+      console.log(`✅ Successfully generated tweet on attempt ${attempt}`);
+      return {
+        content: cleanedText,
+        characterCount: cleanedText.length,
+        hashtags: extractHashtags(cleanedText),
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Unknown error";
+      console.error(`Error in tweet generation attempt ${attempt}:`, error);
+
+      if (attempt === maxRetries) {
+        throw new Error(`Failed to generate tweet after ${maxRetries} attempts: ${lastError}`);
+      }
     }
-
-    return {
-      content: text.trim(),
-      characterCount: text.length,
-      hashtags: extractHashtags(text),
-    };
-  } catch (error) {
-    console.error("Error in tweet generation agent:", error);
-    throw new Error(`Failed to generate tweet: ${error}`);
   }
+
+  throw new Error("Unexpected error in tweet generation");
 }
 
 /**
@@ -150,11 +175,11 @@ export async function analyzePRAndGenerateTweet(prData: PullRequestData): Promis
   // Agent 2: Generate the tweet
   const tweet = await generateTweetContent(prData);
 
-  console.log("📝 Generated tweet:");
-  console.log(`"${tweet.content}"`);
-  console.log(`Characters: ${tweet.characterCount}/280`);
+  // Log detailed tweet analysis
+  logTweetAnalysis(tweet.content);
+
   if (tweet.hashtags.length > 0) {
-    console.log(`Hashtags: ${tweet.hashtags.join(", ")}`);
+    console.log(`🏷️  All hashtags: ${tweet.hashtags.join(", ")}`);
   }
 
   return { decision, tweet };
