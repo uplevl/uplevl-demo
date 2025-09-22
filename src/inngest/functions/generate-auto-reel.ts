@@ -49,8 +49,28 @@ export default inngest.createFunction(
     // Start generating the auto reel
     const { videoJobId } = await step.run(GENERATE_AUTO_REEL_STEPS.START_GENERATING, async () => {
       await JobService.update(jobId, { stepName: GENERATE_AUTO_REEL_STEPS.START_GENERATING });
+
+      // Re-fetch and validate that the group still exists
       const group = await PostMediaGroupService.getById(groupId);
-      const images = group.media.map((media) => media.mediaUrl);
+      if (!group) {
+        const error = new Error(`generate-auto-reel: PostMediaGroup ${groupId} no longer exists`);
+        Sentry.captureException(error);
+        await JobService.update(jobId, { status: "failed", error: error.message });
+        throw error;
+      }
+
+      // Filter out deleted media and any media with undefined/null/empty mediaUrl
+      const images = Array.isArray(group.media)
+        ? group.media.filter((media) => media?.mediaUrl && media.mediaUrl.trim() !== "").map((media) => media.mediaUrl)
+        : [];
+
+      // Only proceed if we have valid images
+      if (images.length === 0) {
+        const error = new Error(`generate-auto-reel: Group ${groupId} has no valid images after filtering`);
+        Sentry.captureException(error);
+        await JobService.update(jobId, { status: "failed", error: error.message });
+        throw error;
+      }
 
       const imageInputs = images.map<VideoService.ImageInput>((image) => ({ image_url: image }));
       const { uuid: videoJobId, status } = await VideoService.createVideo({ image_inputs: imageInputs });
