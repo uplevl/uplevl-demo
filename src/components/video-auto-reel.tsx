@@ -30,7 +30,10 @@ export default function VideoAutoReel({ groupId }: VideoAutoReelProps) {
     queryFn: async () => {
       try {
         const response = await api.jobs[":id"][":entityType"].$get({ param: { id: jobId ?? "", entityType: "group" } });
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data;
+
+        if (!data) return;
 
         if (!data.job) return;
 

@@ -10,7 +10,7 @@ export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string,
   const [enabled, setEnabled] = useState(true);
   const api = useApi();
 
-  const { data } = useQuery({
+  const { data: result } = useQuery({
     queryKey: ["processing", jobId, entityType],
     queryFn: async () => {
       try {
@@ -25,7 +25,9 @@ export default function useJobProgress<P = Post | PostMediaGroup>(jobId: string,
     enabled,
   });
 
-  const hasData = data !== undefined;
+  const data = result?.data;
+
+  const hasData = result !== undefined && data !== undefined;
   const job = data?.job;
 
   useEffect(() => {
