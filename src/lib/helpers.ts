@@ -2,7 +2,7 @@ import "server-only";
 import Crypto from "node:crypto";
 import { sanitizeUrl } from "@/lib/utils";
 
-export async function fetchImage(url: string) {
+export async function fetchImage(url: string): Promise<{ file: File; url: string }> {
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -18,7 +18,7 @@ export async function fetchImage(url: string) {
   return { file, url };
 }
 
-export async function fetchVideo(url: string) {
+export async function fetchVideo(url: string): Promise<File> {
   const response = await fetch(url);
 
   if (!response.ok) {
