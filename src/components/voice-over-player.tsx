@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useVoiceGeneration } from "@/contexts/voice-generation-context";
 import { useGenerateVoiceOver } from "@/hooks/use-generate-voice-over";
 import { useGenerateVoiceOverMutation } from "@/hooks/use-generate-voice-over-mutation";
+import { sanitizeUrl } from "@/lib/utils";
 import Button from "./button";
 import { Typography } from "./typography";
 
@@ -32,7 +33,7 @@ export default function VoiceOverPlayer({ groupId }: VoiceOverPlayerProps) {
     const audio = audioRef.current;
     if (!audio || !audioUrl) return;
 
-    console.log("Loading audio from URL:", audioUrl);
+    console.log("Loading audio from URL:", sanitizeUrl(audioUrl));
 
     // Reset state when new audio loads
     setCurrentTime(0);

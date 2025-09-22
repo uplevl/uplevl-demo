@@ -1,11 +1,13 @@
 import "server-only";
 import Crypto from "node:crypto";
+import { sanitizeUrl } from "@/lib/utils";
 
 export async function fetchImage(url: string) {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText} for ${url}`);
+    const sanitizedUrl = sanitizeUrl(url);
+    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText} for ${sanitizedUrl}`);
   }
 
   const buffer = await response.arrayBuffer();
@@ -20,7 +22,8 @@ export async function fetchVideo(url: string) {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText} for ${url}`);
+    const sanitizedUrl = sanitizeUrl(url);
+    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText} for ${sanitizedUrl}`);
   }
 
   const buffer = await response.arrayBuffer();
