@@ -33,4 +33,18 @@ export const GENERATE_AUTO_REEL_STEPS = {
   FINISH: "finish",
 } as const;
 
+// Generate final video with voice-over
+export const GENERATE_FINAL_VIDEO_EVENT = "app/generate-final-video";
+
+export const GENERATE_FINAL_VIDEO_STEPS = {
+  SETUP: "setup",
+  CALCULATE_TIMING: "calculate-timing",
+  START_REMOTION_RENDER: "start-remotion-render",
+  WAIT_FOR_RENDER: "wait-for-render",
+  UPLOAD_FINAL_VIDEO: "upload-final-video",
+  FINISH: "finish",
+} as const;
+
 export type GenerateAutoReelStep = (typeof GENERATE_AUTO_REEL_STEPS)[keyof typeof GENERATE_AUTO_REEL_STEPS];
+
+export type GenerateFinalVideoStep = (typeof GENERATE_FINAL_VIDEO_STEPS)[keyof typeof GENERATE_FINAL_VIDEO_STEPS];

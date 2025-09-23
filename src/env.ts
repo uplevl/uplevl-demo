@@ -26,6 +26,14 @@ export const env = createEnv({
     ELEVENLABS_API_KEY: z.string().min(1),
 
     AUTO_REEL_API_KEY: z.string().min(1),
+
+    REMOTION_AWS_ACCESS_KEY_ID: z.string().min(1),
+    REMOTION_AWS_SECRET_ACCESS_KEY: z.string().min(1),
+
+    REMOTION_AWS_REGION: z.string().min(1),
+    REMOTION_BUCKET_NAME: z.string().min(1),
+    REMOTION_FUNCTION_NAME: z.string().min(1),
+    REMOTION_SERVE_URL: z.string().min(1),
   },
 
   client: {
@@ -57,6 +65,12 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
     AUTO_REEL_API_KEY: process.env.AUTO_REEL_API_KEY,
+    REMOTION_AWS_ACCESS_KEY_ID: process.env.REMOTION_AWS_ACCESS_KEY_ID,
+    REMOTION_AWS_SECRET_ACCESS_KEY: process.env.REMOTION_AWS_SECRET_ACCESS_KEY,
+    REMOTION_AWS_REGION: process.env.REMOTION_AWS_REGION,
+    REMOTION_BUCKET_NAME: process.env.REMOTION_BUCKET_NAME,
+    REMOTION_FUNCTION_NAME: process.env.REMOTION_FUNCTION_NAME,
+    REMOTION_SERVE_URL: process.env.REMOTION_SERVE_URL,
   },
 
   emptyStringAsUndefined: true,
