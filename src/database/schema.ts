@@ -1,6 +1,11 @@
 import { relations } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
-import type { GenerateAutoReelStep, GenerateScriptsStep, ParseZillowPropertyStep } from "@/constants/events";
+import type {
+  GenerateAutoReelStep,
+  GenerateFinalVideoStep,
+  GenerateScriptsStep,
+  ParseZillowPropertyStep,
+} from "@/constants/events";
 import { createdAt, id, updatedAt } from "@/database/schema-helpers";
 import type { PropertyStats } from "@/types/post";
 
@@ -74,7 +79,9 @@ export const JobTable = pgTable("jobs", {
   }).default("running"),
   error: text("error"),
   eventName: text("event_name").notNull(),
-  stepName: text("step_name").$type<ParseZillowPropertyStep | GenerateScriptsStep | GenerateAutoReelStep>(),
+  stepName: text("step_name").$type<
+    ParseZillowPropertyStep | GenerateScriptsStep | GenerateAutoReelStep | GenerateFinalVideoStep
+  >(),
 
   createdAt,
   updatedAt,

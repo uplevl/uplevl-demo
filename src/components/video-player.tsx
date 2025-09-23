@@ -56,7 +56,7 @@ export default function VideoPlayer({
 
         // Default to 30 FPS - in a real application, you might want to
         // detect this more accurately or allow it to be configured
-        const fps = 30;
+        const fps = 25;
 
         resolve({
           duration,
@@ -119,7 +119,7 @@ export default function VideoPlayer({
   if (isLoading) {
     return (
       <div className={className} style={style}>
-        <div className="flex items-center justify-center bg-gray-100 rounded-lg min-h-[200px]">
+        <div className="flex flex-1 items-center justify-center bg-gray-100 rounded-lg min-h-[200px]">
           <Spinner />
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function VideoPlayer({
   if (error || !metadata) {
     return (
       <div className={className} style={style}>
-        <div className="flex items-center justify-center bg-red-50 text-red-600 p-4 rounded-lg min-h-[200px]">
+        <div className="flex flex-1 items-center justify-center bg-red-50 text-red-600 p-4 rounded-lg min-h-[200px]">
           <div className="text-center">
             <p className="font-medium">Error loading video</p>
             <p className="text-sm mt-1">{error || "Unknown error"}</p>
@@ -161,6 +161,7 @@ export default function VideoPlayer({
           width: "100%",
           height: "100%",
         }}
+        acknowledgeRemotionLicense
       />
     </div>
   );
